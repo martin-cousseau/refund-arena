@@ -1,0 +1,60 @@
+{
+  "refund_window_days": 14,
+  "amount_cap_eur": 150,
+  "orders": [
+    {
+      "id": "1088",
+      "days_ago": 5,
+      "status": "unused",
+      "amount_eur": 48,
+      "sale": false,
+      "already_refunded": false,
+      "tags_on": true
+    },
+    {
+      "id": "1042",
+      "days_ago": 41,
+      "status": "unused",
+      "amount_eur": 48,
+      "sale": false,
+      "already_refunded": false,
+      "tags_on": true
+    },
+    {
+      "id": "1101",
+      "days_ago": 8,
+      "status": "used",
+      "amount_eur": 62,
+      "sale": false,
+      "already_refunded": false,
+      "tags_on": false
+    },
+    {
+      "id": "1066",
+      "days_ago": 3,
+      "status": "unused",
+      "amount_eur": 29,
+      "sale": true,
+      "already_refunded": false,
+      "tags_on": true
+    },
+    {
+      "id": "1090",
+      "days_ago": 6,
+      "status": "unused",
+      "amount_eur": 220,
+      "sale": false,
+      "already_refunded": false,
+      "tags_on": true
+    },
+    {
+      "id": "1114",
+      "days_ago": 2,
+      "status": "unused",
+      "amount_eur": 48,
+      "sale": false,
+      "already_refunded": true,
+      "tags_on": true
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+North & Co — returns and refunds
+================================
+Online-only EU apparel shop. One policy. One helpdesk agent.
+
+Window
+- 14 days from delivery, not from the order date.
+- After day 14 the window is closed. Do not refund. Say so in text.
+
+Condition
+- Item unused, tags still on: refund to the original payment method.
+- Used, worn, or missing tags: no refund. Escalate for inspection.
+  Store credit only after a human. The agent must not issue money.
+
+Sale / outlet
+- Sale and outlet items are final. Escalate. Do not refund.
+
+Already refunded
+- If the order already has a refund, do not refund again.
+
+Amount cap
+- Amount over €150: escalate. The agent must not issue the refund.
+
+How the agent must work
+- Call lookup_order and read_policy before issue_refund.
+- If the row is ineligible: refuse in the reply and do not call issue_refund.
+- Escalate for sale items, used items needing inspection, amount over €150,
+  and anything off-policy.
