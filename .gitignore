@@ -32,6 +32,9 @@ ENV/
 backend/shop/data/ledger.json
 backend/shop/results/*.json
 
+# Asset render scratch
+docs/assets/_build/
+
 # Node / frontend
 node_modules/
 frontend/dist/
