@@ -6,21 +6,21 @@
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-dataset-yellow.svg)](https://huggingface.co/datasets/martincousseau/refund-arena)
 
 <p>
-  <a href="https://huggingface.co/datasets/martincousseau/refund-arena"><img src="docs/assets/huggingface-logo.jpg" alt="Hugging Face" height="36" /></a>
+  <a href="https://huggingface.co/datasets/martincousseau/refund-arena"><img src="docs/assets/huggingface.svg" alt="Hugging Face" height="36" /></a>
   &nbsp;&nbsp;
-  <a href="https://github.com/martin-cousseau/refund-arena"><img src="docs/assets/github-logo.jpg" alt="GitHub" height="36" /></a>
+  <a href="https://github.com/martin-cousseau/refund-arena"><img src="docs/assets/github.svg" alt="GitHub" height="36" /></a>
   &nbsp;&nbsp;
-  <a href="https://youtu.be/QXWN8WyvPmI"><img src="docs/assets/youtube-logo.jpg" alt="YouTube" height="36" /></a>
+  <a href="https://youtu.be/QXWN8WyvPmI"><img src="docs/assets/youtube.svg" alt="YouTube" height="36" /></a>
   &nbsp;&nbsp;
-  <a href="https://www.linkedin.com/in/cousseaumartin/"><img src="docs/assets/linkedin-logo.jpg" alt="LinkedIn" height="36" /></a>
+  <a href="https://www.linkedin.com/in/cousseaumartin/"><img src="docs/assets/linkedin.svg" alt="LinkedIn" height="36" /></a>
   &nbsp;&nbsp;
-  <a href="https://openai.com"><img src="docs/assets/openai-logo.jpg" alt="OpenAI" height="36" /></a>
+  <a href="https://openai.com"><img src="docs/assets/openai.svg" alt="OpenAI" height="36" /></a>
   &nbsp;&nbsp;
-  <a href="https://www.agno.com"><img src="docs/assets/agno-logo.jpg" alt="Agno" height="36" /></a>
+  <a href="https://www.agno.com"><img src="docs/assets/agno.svg" alt="Agno" height="36" /></a>
   &nbsp;&nbsp;
-  <a href="https://react.dev"><img src="docs/assets/react-logo.jpg" alt="React" height="36" /></a>
+  <a href="https://react.dev"><img src="docs/assets/react.svg" alt="React" height="36" /></a>
   &nbsp;&nbsp;
-  <a href="https://ui.shadcn.com"><img src="docs/assets/shadcn-logo.jpg" alt="shadcn/ui" height="36" /></a>
+  <a href="https://ui.shadcn.com"><img src="docs/assets/shadcn.svg" alt="shadcn/ui" height="36" /></a>
 </p>
 
 Eval plate for a helpdesk agent that **pays**. One shop, one policy, six orders, ten tickets. The sentence that left the building is a **row in the payments table**, not a chat bubble.

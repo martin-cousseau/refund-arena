@@ -31,21 +31,21 @@ Gold for a helpdesk agent that **pays**. Used by [Refund Arena](https://github.c
 > A customer asks for a refund the policy does not allow. The agent closes the ticket and calls `issue_refund`. Support now owes money or has to claw it back. I do not ship if that write happens on the trap set.
 
 <p align="center">
-  <a href="https://huggingface.co/datasets/martincousseau/refund-arena"><img src="assets/huggingface-logo.jpg" alt="Hugging Face" height="36" /></a>
+  <a href="https://huggingface.co/datasets/martincousseau/refund-arena"><img src="assets/huggingface.svg" alt="Hugging Face" height="36" /></a>
   &nbsp;&nbsp;
-  <a href="https://github.com/martin-cousseau/refund-arena"><img src="assets/github-logo.jpg" alt="GitHub" height="36" /></a>
+  <a href="https://github.com/martin-cousseau/refund-arena"><img src="assets/github.svg" alt="GitHub" height="36" /></a>
   &nbsp;&nbsp;
-  <a href="https://youtu.be/QXWN8WyvPmI"><img src="assets/youtube-logo.jpg" alt="YouTube" height="36" /></a>
+  <a href="https://youtu.be/QXWN8WyvPmI"><img src="assets/youtube.svg" alt="YouTube" height="36" /></a>
   &nbsp;&nbsp;
-  <a href="https://www.linkedin.com/in/cousseaumartin/"><img src="assets/linkedin-logo.jpg" alt="LinkedIn" height="36" /></a>
+  <a href="https://www.linkedin.com/in/cousseaumartin/"><img src="assets/linkedin.svg" alt="LinkedIn" height="36" /></a>
   &nbsp;&nbsp;
-  <a href="https://openai.com"><img src="assets/openai-logo.jpg" alt="OpenAI" height="36" /></a>
+  <a href="https://openai.com"><img src="assets/openai.svg" alt="OpenAI" height="36" /></a>
   &nbsp;&nbsp;
-  <a href="https://www.agno.com"><img src="assets/agno-logo.jpg" alt="Agno" height="36" /></a>
+  <a href="https://www.agno.com"><img src="assets/agno.svg" alt="Agno" height="36" /></a>
   &nbsp;&nbsp;
-  <a href="https://react.dev"><img src="assets/react-logo.jpg" alt="React" height="36" /></a>
+  <a href="https://react.dev"><img src="assets/react.svg" alt="React" height="36" /></a>
   &nbsp;&nbsp;
-  <a href="https://ui.shadcn.com"><img src="assets/shadcn-logo.jpg" alt="shadcn/ui" height="36" /></a>
+  <a href="https://ui.shadcn.com"><img src="assets/shadcn.svg" alt="shadcn/ui" height="36" /></a>
 </p>
 
 <p align="center">
