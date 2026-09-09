@@ -1,0 +1,51 @@
+# Secrets
+.env
+.env.local
+.env.production
+.envrc
+
+# Python
+__pycache__/
+*.py[codz]
+*$py.class
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+.cache
+uv.lock
+.venv/
+venv/
+env/
+ENV/
+
+# Shop runtime ledger and eval output (seed JSON is committed)
+backend/shop/data/ledger.json
+backend/shop/results/*.json
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Coding-agent local state (shared skills live in backend/.agents/skills/)
+.claude/*
+!.claude/skills
+!.claude/settings.json
+.codex/
+tmp/

@@ -1,0 +1,76 @@
+# Refund Arena — one Compose file for the whole repo.
+#   docker compose up --build
+# Frontend (later): docker compose --profile frontend up --build
+services:
+  db:
+    image: agnohq/pgvector:18
+    container_name: refund-arena-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    environment:
+      POSTGRES_USER: ${DB_USER:-ai}
+      POSTGRES_PASSWORD: ${DB_PASS:-ai}
+      POSTGRES_DB: ${DB_DATABASE:-ai}
+    networks:
+      - refund-arena
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: refund-arena-backend
+    image: ${IMAGE_NAME:-refund-arena}:${IMAGE_TAG:-latest}
+    command: >
+      uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      --reload-dir agents --reload-dir app --reload-dir db
+      --reload-dir evals --reload-dir teams --reload-dir workflows
+      --reload-dir shop
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      RUNTIME_ENV: dev
+      AGNO_DEBUG: "True"
+      WAIT_FOR_DB: "True"
+      AGENTOS_URL: http://127.0.0.1:8000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-ai}
+      DB_PASS: ${DB_PASS:-ai}
+      DB_DATABASE: ${DB_DATABASE:-ai}
+    depends_on:
+      - db
+    networks:
+      - refund-arena
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Uncommented when frontend/ has a Dockerfile. Off unless you pass --profile frontend.
+  frontend:
+    profiles: ["frontend"]
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: refund-arena-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - refund-arena
+
+networks:
+  refund-arena:
+
+volumes:
+  pgdata:
