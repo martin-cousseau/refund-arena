@@ -30,7 +30,9 @@ ENV/
 
 # Shop runtime ledger and eval output (seed JSON is committed)
 backend/shop/data/ledger.json
+backend/shop/data/configs.json
 backend/shop/results/*.json
+backend/shop/results/*.jsonl
 
 # Asset render scratch
 docs/assets/_build/
