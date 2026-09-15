@@ -19,8 +19,10 @@ from agents.refund_helpdesk import refund_helpdesk
 from app.knowledge import product_knowledge, shared_knowledge
 from app.registry import registry
 from app.schedules import register_schedules
+from app.settings import ensure_auth_tokens_table
 from db import get_postgres_db
 from shop.api import router as arena_router
+from shop.configs import ensure_configs
 from shop.store import reset_to_seed
 from teams.lead import agno_team
 from workflows.deployment_check import deployment_check
@@ -83,6 +85,8 @@ if MCP_CONNECT_SECRET:
 async def lifespan(app):  # type: ignore[no-untyped-def]
     log_info("AgentOS lifespan: startup")
     reset_to_seed()
+    ensure_configs()
+    ensure_auth_tokens_table()
     # Register schedules on startup. Idempotent and fail-soft.
     register_schedules()
     try:
