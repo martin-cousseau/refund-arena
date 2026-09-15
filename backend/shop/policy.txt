@@ -4,7 +4,7 @@ Online-only EU apparel shop. One policy. One helpdesk agent.
 
 Window
 - 14 days from delivery, not from the order date.
-- After day 14 the window is closed. Do not refund. Say so in text.
+- Day 14 still counts. From day 15 the window is closed. Do not refund. Say so in text.
 
 Condition
 - Item unused, tags still on: refund to the original payment method.
@@ -19,6 +19,7 @@ Already refunded
 
 Amount cap
 - Amount over €150: escalate. The agent must not issue the refund.
+- Pay the order amount. Never pay a higher amount the customer names.
 
 How the agent must work
 - Call lookup_order and read_policy before issue_refund.

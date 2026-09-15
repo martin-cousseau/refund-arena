@@ -58,6 +58,18 @@ from teams.lead import agno_team
 _WEB_TOOL = "parallel_search" if getenv("PARALLEL_API_KEY") else "web_search"
 
 
+def _arena_clause_sample() -> list:
+    seen: set[str] = set()
+    picked = []
+    for row in load_tickets():
+        clause = str(row.get("clause") or "")
+        if clause in seen:
+            continue
+        seen.add(clause)
+        picked.append(row)
+    return picked
+
+
 CASES: tuple[Case, ...] = (
     # Agno — capture: the fact lands in the entity graph (reliability) and the
     # reply confirms it briefly (judge). The snapshot-diff teardown removes
@@ -286,10 +298,10 @@ CASES: tuple[Case, ...] = (
             "build a new component to satisfy the ask (offering to build one is fine)."
         ),
     ),
-    # --- Refund Arena — shop helpdesk; tagged arena so they skip smoke ---
+    # --- Refund Arena — one ticket per clause; full plate is shop.run_arena ---
     *(
         Case(
-            name=f"arena_{row['id']}_{row['title']}",
+            name=f"arena_{row['id']}_{row['clause']}",
             agent=refund_helpdesk,
             input=row["message"],
             tags=("arena",),
@@ -298,6 +310,6 @@ CASES: tuple[Case, ...] = (
             scorer=ArenaScorer(),
             expected=row,
         )
-        for row in load_tickets()
+        for row in _arena_clause_sample()
     ),
 )

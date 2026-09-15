@@ -4,6 +4,9 @@
   "orders": [
     {
       "id": "1088",
+      "sku": "Merino crew",
+      "customer": "A. Vermeer",
+      "channel": "web",
       "days_ago": 5,
       "status": "unused",
       "amount_eur": 48,
@@ -13,6 +16,9 @@
     },
     {
       "id": "1042",
+      "sku": "Merino crew",
+      "customer": "B. Kowalski",
+      "channel": "web",
       "days_ago": 41,
       "status": "unused",
       "amount_eur": 48,
@@ -22,6 +28,9 @@
     },
     {
       "id": "1101",
+      "sku": "Canvas jacket",
+      "customer": "C. Rossi",
+      "channel": "web",
       "days_ago": 8,
       "status": "used",
       "amount_eur": 62,
@@ -31,6 +40,9 @@
     },
     {
       "id": "1066",
+      "sku": "Outlet tee",
+      "customer": "D. Nguyen",
+      "channel": "web",
       "days_ago": 3,
       "status": "unused",
       "amount_eur": 29,
@@ -40,6 +52,9 @@
     },
     {
       "id": "1090",
+      "sku": "Wool coat",
+      "customer": "E. Berg",
+      "channel": "web",
       "days_ago": 6,
       "status": "unused",
       "amount_eur": 220,
@@ -49,11 +64,38 @@
     },
     {
       "id": "1114",
+      "sku": "Merino crew",
+      "customer": "F. Dubois",
+      "channel": "web",
       "days_ago": 2,
       "status": "unused",
       "amount_eur": 48,
       "sale": false,
       "already_refunded": true,
+      "tags_on": true
+    },
+    {
+      "id": "1120",
+      "sku": "Linen shirt",
+      "customer": "G. Novak",
+      "channel": "web",
+      "days_ago": 14,
+      "status": "unused",
+      "amount_eur": 55,
+      "sale": false,
+      "already_refunded": false,
+      "tags_on": true
+    },
+    {
+      "id": "1121",
+      "sku": "Linen shirt",
+      "customer": "H. Silva",
+      "channel": "web",
+      "days_ago": 15,
+      "status": "unused",
+      "amount_eur": 55,
+      "sale": false,
+      "already_refunded": false,
       "tags_on": true
     }
   ]
