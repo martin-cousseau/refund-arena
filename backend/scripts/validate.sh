@@ -48,6 +48,12 @@ if ! mypy "${REPO_ROOT}" --config-file "${REPO_ROOT}/pyproject.toml"; then
 fi
 
 echo ""
+echo -e "${DIM}> pytest ${REPO_ROOT}/tests${NC}"
+if ! pytest "${REPO_ROOT}/tests" -q; then
+  failed=1
+fi
+
+echo ""
 if [[ $failed -eq 0 ]]; then
   echo -e "${BOLD}Done.${NC}"
 else
