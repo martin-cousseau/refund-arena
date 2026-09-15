@@ -10,6 +10,7 @@ authors = [{ name = "Agno", email = "hello@agno.com" }]
 dependencies = [
   "agno[os,mcp,slack,pgvector,psycopg,csv,excel,docx,pdf,website]==3.0.4",
   "cel-python",
+  "fastembed",
   "openai",
   "parallel-web",
   "python-dotenv",
@@ -17,15 +18,23 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["mypy", "ruff"]
+dev = ["mypy", "ruff", "pytest"]
 
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["agents*", "app*", "db*", "evals*", "teams*", "workflows*"]
+include = ["agents*", "app*", "db*", "evals*", "teams*", "workflows*", "shop*"]
+exclude = ["shop.tests*"]
 namespaces = false
+
+[tool.setuptools.package-data]
+shop = ["data/*.json", "policy.txt"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 120

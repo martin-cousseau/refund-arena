@@ -11,7 +11,6 @@ from functools import cache
 
 from agno.db.postgres import PostgresDb
 from agno.knowledge import Knowledge
-from agno.knowledge.embedder.openai import OpenAIEmbedder
 from agno.vectordb.pgvector import PgVector, SearchType
 
 from db.url import db_url
@@ -35,14 +34,20 @@ def get_postgres_db(contents_table: str | None = None) -> PostgresDb:
 
 
 def create_knowledge(name: str, table_name: str) -> Knowledge:
-    """Creates a PgVector knowledge base with hybrid search."""
+    """Creates a PgVector knowledge base with hybrid search.
+
+    Embeddings are local FastEmbed so knowledge ingest does not bill OpenAI
+    or SuperGrok. The client downloads the ONNX model on first embed.
+    """
+    from agno.knowledge.embedder.fastembed import FastEmbedEmbedder
+
     return Knowledge(
         name=name,
         vector_db=PgVector(
             db_url=db_url,
             table_name=table_name,
             search_type=SearchType.hybrid,
-            embedder=OpenAIEmbedder(id="text-embedding-3-small"),
+            embedder=FastEmbedEmbedder(),
         ),
         contents_db=get_postgres_db(contents_table=f"{table_name}_contents"),
     )

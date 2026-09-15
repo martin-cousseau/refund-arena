@@ -36,6 +36,7 @@ from agno.eval import cli  # noqa: E402
 from agno.os.utils import collect_mcp_tools_from_registry  # noqa: E402
 
 from app.registry import registry  # noqa: E402
+from app.settings import default_model  # noqa: E402
 from evals.cases import CASES, eval_db  # noqa: E402
 
 # Behind the guard so an import never costs money
@@ -45,4 +46,4 @@ if __name__ == "__main__":
     # The runner connects them before the cases run and closes them afterwards.
     mcp_tools: list = []
     collect_mcp_tools_from_registry(registry, mcp_tools)
-    sys.exit(cli(CASES, db=eval_db, mcp_tools=mcp_tools))
+    sys.exit(cli(CASES, db=eval_db, mcp_tools=mcp_tools, judge_model=default_model()))

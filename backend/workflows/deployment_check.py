@@ -18,6 +18,7 @@ from agno.workflow.workflow import Workflow
 from sqlalchemy import create_engine, text
 
 from app.schedules import env_flag
+from app.settings import encryption_key_set, supergrok_signed_in
 from db import db_url, get_postgres_db
 
 # The poller ticks every 15s (AgentOS's default) and claims any enabled schedule whose
@@ -92,15 +93,37 @@ def _check_runtime() -> CheckResult:
     return _warn("Runtime", f"Unexpected RUNTIME_ENV={runtime_env!r}; expected 'dev' or 'prd'.")
 
 
-def _check_openai_key() -> CheckResult:
-    """The one env var whose absence every other check survives."""
-    if getenv("OPENAI_API_KEY"):
-        return _pass("OpenAI key", "Set — models, knowledge embeddings, and the registry's media tools.")
+def _check_model_auth() -> CheckResult:
+    """Inference rides SuperGrok. The encryption key is required to persist the session."""
+    if not encryption_key_set():
+        return _fail(
+            "SuperGrok",
+            "XAI_TOKEN_ENCRYPTION_KEY is not set. Generate one with "
+            '`python -c "from agno.utils.encryption import generate_encryption_key; '
+            'print(generate_encryption_key())"` and run `python -m app.xai_login`.',
+        )
+    if supergrok_signed_in():
+        return _pass("SuperGrok", "Signed in — models use the SuperGrok subscription.")
+    if getenv("XAI_API_KEY"):
+        return _warn(
+            "SuperGrok",
+            "No SuperGrok session; using XAI_API_KEY (metered). "
+            "Run `python -m app.xai_login` to keep the bill on the subscription.",
+        )
     return _fail(
-        "OpenAI key",
-        "OPENAI_API_KEY is not set: every model call fails, knowledge cannot embed, and the "
-        "registry drops its image and speech tools with no warning.",
+        "SuperGrok",
+        "Not signed in and XAI_API_KEY is unset. Run `docker compose exec backend python -m app.xai_login`.",
     )
+
+
+def _check_openai_optional() -> CheckResult:
+    if getenv("OPENAI_API_KEY"):
+        return _warn(
+            "OpenAI key",
+            "Set — only the registry's image/TTS tools use it. Models and embeddings do not. "
+            "Unset it to keep the bill on SuperGrok.",
+        )
+    return _pass("OpenAI key", "Unset — models use SuperGrok; media tools are off.")
 
 
 def _check_agentos_url() -> CheckResult:
@@ -366,7 +389,8 @@ async def deployment_check_step(_step_input: StepInput) -> StepOutput:
     checks = [
         _check_database(),
         _check_runtime(),
-        _check_openai_key(),
+        _check_model_auth(),
+        _check_openai_optional(),
         _check_agentos_url(),
         await _check_mcp(),
         _check_slack_config(),

@@ -133,6 +133,7 @@ async def run_evals_step(_step_input: StepInput) -> StepOutput:
     # Imported lazily so the eval suite only loads when the workflow actually runs.
     from agno.eval import SuiteResult, arun_cases
 
+    from app.settings import default_model
     from evals.cases import CASES, eval_db
 
     tag = getenv("EVALS_TAG", "smoke")
@@ -155,6 +156,7 @@ async def run_evals_step(_step_input: StepInput) -> StepOutput:
                 tag=tag,
                 default_timeout=case_timeout_seconds,
                 db=eval_db,
+                judge_model=default_model(),
                 on_case_start=lambda case: started.append(case.name),
                 on_case_end=lambda case, result: finished.append(result),
             ),

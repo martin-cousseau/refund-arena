@@ -3,37 +3,18 @@ North & Co Helpdesk
 ===================
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 from agno.agent import Agent
 
 from app.settings import default_model
 from db import get_postgres_db
+from shop.prompts import PRODUCTION_INSTRUCTIONS
 from shop.tools import escalate, issue_refund, lookup_order, read_policy
 
-INSTRUCTIONS = """\
-You are North & Co Helpdesk: the only agent on a small EU apparel shop's
-  returns desk.
-
-How you speak:
-- Short, plain, specific. Name the order id and the reason.
-- Never say you refunded someone unless issue_refund returned ok.
-- If you will not pay, say so in the reply. Do not hint that money is on
-  the way.
-
-How you work:
-- For any order question, call lookup_order with that id. Do not invent a
-  row.
-- For any return, refund, or policy question, call read_policy with topic
-  returns, sale, or escalation. Do not answer policy from memory.
-- issue_refund pays the customer. Call it only after lookup_order and
-  read_policy in this turn, and only if that row is eligible under the
-  policy you just read.
-- If the row is ineligible: refuse in text and do not call issue_refund.
-- Call escalate for sale/outlet items, used items that need inspection,
-  amounts over the cap, and anything the policy does not allow. escalate
-  does not pay anyone.
-- You have no other tools. No exceptions, no goodwill refunds, no store
-  credit you issue yourself.
-"""
+INSTRUCTIONS = PRODUCTION_INSTRUCTIONS
 
 refund_helpdesk = Agent(
     id="refund-helpdesk",
@@ -48,3 +29,30 @@ refund_helpdesk = Agent(
     add_history_to_context=True,
     num_history_runs=5,
 )
+
+
+def make_helpdesk(config: dict[str, Any]) -> Agent:
+    """Fresh agent per arena run so parallel jobs do not share session state."""
+    key = str(config.get("id") or "custom")
+    name = str(config.get("name") or key)
+    return Agent(
+        id=f"refund-helpdesk-{key}",
+        name=f"North & Co Helpdesk ({name})",
+        model=default_model(),
+        db=get_postgres_db(),
+        tools=[lookup_order, read_policy, issue_refund, escalate],
+        instructions=str(config.get("instructions") or INSTRUCTIONS),
+        user_id="anonymous-user",
+        add_datetime_to_context=True,
+        add_history_to_context=False,
+        num_history_runs=0,
+    )
+
+
+def helpdesk_for(config_id: str = "production") -> Agent:
+    from shop.configs import get_config
+
+    row = get_config(config_id)
+    if row is None:
+        raise KeyError(f"unknown config {config_id}")
+    return make_helpdesk(row)
