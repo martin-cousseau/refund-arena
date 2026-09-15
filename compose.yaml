@@ -1,6 +1,5 @@
 # Refund Arena — one Compose file for the whole repo.
 #   docker compose up --build
-# Frontend (later): docker compose --profile frontend up --build
 services:
   db:
     image: agnohq/pgvector:18
@@ -28,6 +27,8 @@ services:
       --reload-dir agents --reload-dir app --reload-dir db
       --reload-dir evals --reload-dir teams --reload-dir workflows
       --reload-dir shop
+      --reload-exclude shop/data/*
+      --reload-exclude shop/results/*
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -53,17 +54,14 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  # Uncommented when frontend/ has a Dockerfile. Off unless you pass --profile frontend.
   frontend:
-    profiles: ["frontend"]
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: refund-arena-frontend
+    restart: unless-stopped
     ports:
       - "3000:3000"
-    environment:
-      VITE_API_URL: http://localhost:8000
     depends_on:
       - backend
     networks:

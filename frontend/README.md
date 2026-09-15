@@ -1,16 +1,25 @@
 # Refund Arena — frontend
 
-React app, not built yet. It will live in this directory and talk to the backend already running in Compose.
+North Desk: operator radar for North & Co. React + Vite + shadcn. Talks to `/arena` on the backend.
 
-- `GET /arena/tickets`, `POST /arena/run`, `GET /arena/scoreboard`, `GET /arena/payments`
-- `POST /agents/refund-helpdesk/runs` for a live chat column
-- CORS is already open for `http://localhost:3000` and `http://localhost:5173`
-
-When this folder has a `Dockerfile`:
+Pages: Overview (gate, graphs, fails), Queue (ticket review), Runs (per-config table), Shop (orders / policy / ledger), Prompts (editable configs).
 
 ```bash
 # from repo root
-docker compose --profile frontend up --build
+cp .env.example .env    # XAI_TOKEN_ENCRYPTION_KEY
+docker compose up --build
+docker compose exec backend python -m app.xai_login
 ```
 
-The `frontend` service is declared in the root `compose.yaml` with `profiles: [frontend]`, so `docker compose up` keeps working without this app.
+Desk: http://localhost:3000  
+API: http://localhost:8000
+
+Local without the frontend container:
+
+```bash
+cd frontend
+pnpm install
+pnpm dev                 # http://localhost:3000, proxies /arena to :8000
+```
+
+Naive / Policy / Production are prompt configs on the same gold. Production is the ship candidate. The board for a config grows as you run tickets and survives a reload.
