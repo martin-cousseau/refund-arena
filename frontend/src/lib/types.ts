@@ -107,6 +107,15 @@ export type PromptConfig = {
   updated_at?: string
 }
 
+export type LiveSnapshot = {
+  config_id: string
+  ticket_id: string
+  epoch: number
+  phase: string
+  turns: { turn: number; content: string }[]
+  tool_calls: ToolCall[]
+}
+
 export type TicketRun = {
   ticket: Ticket
   config_id: string

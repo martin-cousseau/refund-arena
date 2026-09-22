@@ -32,30 +32,41 @@ function decisionOf(call: ToolCall): string {
 export function ToolTrail({
   ticket,
   calls,
+  showMissing = true,
+  hideTurn = false,
 }: {
   ticket: Ticket
   calls: ToolCall[]
+  showMissing?: boolean
+  hideTurn?: boolean
 }) {
   const names = calls.map((call) => call.name)
   const gold = ticket.gold_tools ?? []
-  const missing = gold.filter((name) => !names.includes(name))
+  const missing = showMissing
+    ? gold.filter((name) => !names.includes(name))
+    : []
 
   return (
     <ol className="flex flex-col gap-1.5">
-      {calls.length === 0 ? <p className="text-sm text-muted-foreground">No tool calls.</p> : null}
+      {calls.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No tool calls.</p>
+      ) : null}
       {calls.map((call, index) => {
         const oid = String(call.args.order_id ?? call.args.orderId ?? "")
         const decision = decisionOf(call)
         const committedForbidden =
-          call.name === "propose_refund" && decision === "commit" && oid && oid === ticket.forbidden_order_id
+          call.name === "propose_refund" &&
+          decision === "commit" &&
+          oid &&
+          oid === ticket.forbidden_order_id
         const rejected = call.name === "propose_refund" && decision === "reject"
         return (
           <TrailRow
-            key={`${call.name}-${index}`}
+            key={`${call.name}-${index}-${call.turn ?? 1}`}
             name={call.name}
             args={call.args}
             result={call.result}
-            turn={call.turn}
+            turn={hideTurn ? undefined : call.turn}
             tone={committedForbidden ? "bad" : rejected ? "near" : "plain"}
           />
         )
@@ -100,18 +111,36 @@ function TrailRow({
         tone === "near" && "border-tag-amber/50 bg-tag-amber/10"
       )}
     >
-      <button type="button" className="flex w-full items-start justify-between gap-2 text-left" onClick={() => setOpen((v) => !v)}>
+      <button
+        type="button"
+        className="flex w-full items-start justify-between gap-2 text-left"
+        onClick={() => setOpen((v) => !v)}
+      >
         <div>
-          <div className={cn("font-medium", tone === "bad" && "text-tag-rose", tone === "near" && "text-tag-amber")}>
+          <div
+            className={cn(
+              "font-medium",
+              tone === "bad" && "text-tag-rose",
+              tone === "near" && "text-tag-amber"
+            )}
+          >
             {turn ? `t${turn} ` : ""}
             {name}
           </div>
-          {argText ? <div className="text-muted-foreground">{argText}</div> : null}
+          {argText ? (
+            <div className="text-muted-foreground">{argText}</div>
+          ) : null}
         </div>
-        {resultText ? <span className="text-[11px] text-muted-foreground">{open ? "hide" : "result"}</span> : null}
+        {resultText ? (
+          <span className="text-[11px] text-muted-foreground">
+            {open ? "hide" : "result"}
+          </span>
+        ) : null}
       </button>
       {open && resultText ? (
-        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap text-[11px] text-muted-foreground">{resultText}</pre>
+        <pre className="mt-2 max-h-40 overflow-auto text-[11px] whitespace-pre-wrap text-muted-foreground">
+          {resultText}
+        </pre>
       ) : null}
     </li>
   )

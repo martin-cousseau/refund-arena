@@ -1,18 +1,32 @@
 import { normalizeScore } from "@/lib/result"
-import type { ArenaJob, LiveBoard, PromptConfig, TicketRun, World } from "@/lib/types"
+import type {
+  ArenaJob,
+  LiveBoard,
+  LiveSnapshot,
+  PromptConfig,
+  TicketRun,
+  World,
+} from "@/lib/types"
 
 function messageFromBody(status: number, raw: string, label: string): string {
   const trimmed = raw.trim()
-  if (status === 502 || status === 503 || status === 504 || trimmed.startsWith("<")) {
+  if (
+    status === 502 ||
+    status === 503 ||
+    status === 504 ||
+    trimmed.startsWith("<")
+  ) {
     return "Backend is starting or unreachable. Retry in a moment."
   }
   try {
     const parsed = JSON.parse(trimmed) as { detail?: unknown }
-    if (typeof parsed.detail === "string" && parsed.detail.trim()) return parsed.detail
+    if (typeof parsed.detail === "string" && parsed.detail.trim())
+      return parsed.detail
   } catch {
     // not JSON
   }
-  if (trimmed && trimmed.length < 200 && !trimmed.startsWith("<")) return trimmed
+  if (trimmed && trimmed.length < 200 && !trimmed.startsWith("<"))
+    return trimmed
   return `${label} failed (${status})`
 }
 
@@ -23,14 +37,21 @@ async function readJson<T>(res: Response, label: string): Promise<T> {
   return (await res.json()) as T
 }
 
-async function getJson<T>(url: string, label: string, attempts = 8): Promise<T> {
+async function getJson<T>(
+  url: string,
+  label: string,
+  attempts = 8
+): Promise<T> {
   let last = new Error(label)
   for (let i = 0; i < attempts; i++) {
     try {
       return await readJson<T>(await fetch(url), label)
     } catch (err) {
       last = err instanceof Error ? err : new Error(String(err))
-      const retryable = /starting or unreachable|Failed to fetch|NetworkError/i.test(last.message)
+      const retryable =
+        /starting or unreachable|Failed to fetch|NetworkError/i.test(
+          last.message
+        )
       if (!retryable || i === attempts - 1) throw last
       await new Promise((resolve) => setTimeout(resolve, 750))
     }
@@ -43,14 +64,20 @@ export async function fetchWorld(): Promise<World> {
 }
 
 export async function fetchConfigs(): Promise<PromptConfig[]> {
-  const payload = await readJson<{ configs: PromptConfig[] }>(await fetch("/arena/configs"), "Load configs")
+  const payload = await readJson<{ configs: PromptConfig[] }>(
+    await fetch("/arena/configs"),
+    "Load configs"
+  )
   return payload.configs
 }
 
 function withNormalizedBoard(board: LiveBoard): LiveBoard {
   return {
     ...board,
-    runs: (board.runs ?? []).map((row) => ({ ...row, score: normalizeScore(row.score) })),
+    runs: (board.runs ?? []).map((row) => ({
+      ...row,
+      score: normalizeScore(row.score),
+    })),
   }
 }
 
@@ -67,10 +94,27 @@ export async function fetchRuns(configId: string): Promise<TicketRun[]> {
     `/arena/runs?config_id=${encodeURIComponent(configId)}`,
     "Load runs"
   )
-  return payload.runs.map((row) => ({ ...row, score: normalizeScore(row.score) }))
+  return payload.runs.map((row) => ({
+    ...row,
+    score: normalizeScore(row.score),
+  }))
 }
 
-export async function runTicket(ticketId: string, configId: string): Promise<TicketRun> {
+export async function fetchLive(
+  ticketId: string,
+  configId: string
+): Promise<LiveSnapshot | null> {
+  const url = `/arena/live?config_id=${encodeURIComponent(configId)}&ticket_id=${encodeURIComponent(ticketId)}`
+  const res = await fetch(url)
+  if (!res.ok) return null
+  const payload = (await res.json()) as { live?: LiveSnapshot | null }
+  return payload.live ?? null
+}
+
+export async function runTicket(
+  ticketId: string,
+  configId: string
+): Promise<TicketRun> {
   const res = await fetch("/arena/run", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -83,7 +127,10 @@ export async function runTicket(ticketId: string, configId: string): Promise<Tic
     board: payload.board
       ? {
           ...payload.board,
-          runs: (payload.board.runs ?? []).map((row) => ({ ...row, score: normalizeScore(row.score) })),
+          runs: (payload.board.runs ?? []).map((row) => ({
+            ...row,
+            score: normalizeScore(row.score),
+          })),
         }
       : payload.board,
   }
@@ -139,12 +186,16 @@ export async function updateConfig(
 }
 
 export async function deleteConfig(id: string): Promise<void> {
-  const res = await fetch(`/arena/configs/${encodeURIComponent(id)}`, { method: "DELETE" })
+  const res = await fetch(`/arena/configs/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  })
   await readJson<{ ok: boolean }>(res, "Delete config")
 }
 
 export async function resetConfig(id: string): Promise<PromptConfig> {
-  const res = await fetch(`/arena/configs/${encodeURIComponent(id)}/reset`, { method: "POST" })
+  const res = await fetch(`/arena/configs/${encodeURIComponent(id)}/reset`, {
+    method: "POST",
+  })
   return readJson<PromptConfig>(res, "Reset config")
 }
 
