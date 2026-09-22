@@ -21,7 +21,7 @@ export function OrderCard({
 }) {
   const trap = trapIds.has(order.id)
   const must = isMustPay(order, trapIds, windowDays, cap)
-  const flags = orderFlags(order, trapIds, windowDays, cap).filter((flag) => flag !== "trap" && flag !== "eligible")
+  const flags = orderFlags(order, trapIds, windowDays, cap).filter((flag) => flag !== "payable" && flag !== "ineligible")
   const windowPct = Math.min(100, Math.round((100 * order.days_since_delivery) / Math.max(1, windowDays)))
   const overWindow = order.days_since_delivery > windowDays
 
@@ -31,7 +31,10 @@ export function OrderCard({
         <div>
           <p className="font-mono text-[11px] text-muted-foreground">{order.id}</p>
           <p className="text-sm font-medium">{order.sku}</p>
-          <p className="text-[12px] text-muted-foreground">{order.customer}</p>
+          <p className="text-[12px] text-muted-foreground">
+            {order.customer}
+            {order.customer_id ? ` · ${order.customer_id}` : ""}
+          </p>
         </div>
         <p className="font-mono text-sm tabular-nums">€{order.amount_eur}</p>
       </div>

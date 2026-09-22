@@ -121,6 +121,7 @@ export function Shell() {
               GATE {board.gate_fail ?? board.forbidden_write}
             </span>
             <span className="hidden text-muted-foreground sm:inline">miss {board.missed_refund}</span>
+            <span className="hidden text-muted-foreground md:inline">near {board.near_miss}</span>
             <Button
               size="icon-xs"
               variant="ghost"

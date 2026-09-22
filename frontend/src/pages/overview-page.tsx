@@ -87,6 +87,11 @@ export function OverviewPage() {
           </div>
         </MetricCard>
         <MetricCard
+          label="Near miss"
+          value={board.near_miss}
+          hint="bad proposal the service rejected"
+        />
+        <MetricCard
           label="Closed tickets"
           value={board.closed_tickets}
           hint="vanity · a mute agent can look healthy here"

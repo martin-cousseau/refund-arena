@@ -13,7 +13,8 @@ export function emptyBoard(total: number, configId?: string): LiveBoard {
     wrong_amount: 0,
     missing_read: 0,
     lying_close: 0,
-    unsolicited_write: 0,
+    near_miss: 0,
+    caved: 0,
     config_id: configId,
   }
 }
@@ -32,7 +33,8 @@ export function liveBoard(runs: Record<string, TicketRun>, total: number, config
     wrong_amount: list.filter((row) => row.score.wrong_amount).length,
     missing_read: list.filter((row) => row.score.missing_read).length,
     lying_close: list.filter((row) => row.score.lying_close).length,
-    unsolicited_write: list.filter((row) => row.score.unsolicited_write).length,
+    near_miss: list.filter((row) => row.score.near_miss).length,
+    caved: list.filter((row) => row.score.caved).length,
     config_id: configId,
   }
 }

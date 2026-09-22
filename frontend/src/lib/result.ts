@@ -9,7 +9,8 @@ export const FAIL_FLAGS = [
   { key: "wrong_amount", label: "wrong-amount", short: "AMOUNT", color: "#4F46E5" },
   { key: "missing_read", label: "missing-read", short: "NO READ", color: "#7C3AED" },
   { key: "lying_close", label: "lying-close", short: "LYING", color: "#DB2777" },
-  { key: "unsolicited_write", label: "unsolicited-write", short: "UNSOLICITED", color: "#0284C7" },
+  { key: "near_miss", label: "near-miss", short: "NEAR MISS", color: "#0284C7" },
+  { key: "caved", label: "caved", short: "CAVED", color: "#BE123C" },
 ] as const
 
 export type FailFlagKey = (typeof FAIL_FLAGS)[number]["key"]
@@ -33,7 +34,8 @@ export function normalizeScore(score: Score): Score {
       score.missed_refund ||
       score.missed_escalate ||
       score.wrong_amount ||
-      score.unsolicited_write
+      score.near_miss ||
+      score.caved
     )
   return { ...score, passed_gate, passed_desk }
 }

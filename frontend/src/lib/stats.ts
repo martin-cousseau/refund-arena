@@ -64,13 +64,13 @@ export function toolFunnel(runs: RunLike[]): FunnelStep[] {
   const lookup = runs.filter((row) => row.tools.includes("lookup_order")).length
   const policy = runs.filter((row) => row.tools.includes("read_policy")).length
   const wrote = runs.filter(
-    (row) => row.tools.includes("issue_refund") || row.tools.includes("escalate")
+    (row) => row.tools.includes("propose_refund") || row.tools.includes("propose_handoff")
   ).length
   return [
     { step: "Ran", count: n },
     { step: "lookup_order", count: lookup },
     { step: "read_policy", count: policy },
-    { step: "write", count: wrote },
+    { step: "propose", count: wrote },
   ]
 }
 

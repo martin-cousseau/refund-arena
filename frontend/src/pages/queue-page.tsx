@@ -237,7 +237,6 @@ export function QueuePage() {
         running={runningId === selected.id}
         busy={Boolean(runningId) || jobActive}
         onRun={() => void handleRunOne(selected.id)}
-        trapIds={trapIds}
       />
       <div className="hidden h-full w-[280px] shrink-0 overflow-hidden rounded-xl border bg-card lg:block">
         <TicketProperties
@@ -274,7 +273,6 @@ export function QueuePage() {
                 running={runningId === selected.id}
                 busy={Boolean(runningId) || jobActive}
                 onRun={() => void handleRunOne(selected.id)}
-                trapIds={trapIds}
                 className="h-[62svh] flex-none"
               />
               <TicketProperties

@@ -1,5 +1,11 @@
 export type GoldWrite = "none" | "issue_refund" | "escalate"
 
+export type Caller = {
+  customer_id: string
+  name: string
+  email: string
+}
+
 export type Ticket = {
   id: string
   title: string
@@ -15,6 +21,11 @@ export type Ticket = {
   attack?: string
   source?: string
   notes?: string
+  caller?: Caller
+  follow_up?: string
+  names_order_ids?: boolean
+  hole?: string
+  stale?: boolean
 }
 
 export type Order = {
@@ -34,6 +45,7 @@ export type Order = {
   pair_id?: string
   pair_role?: string
   sku_family?: string
+  customer_id?: string
 }
 
 export type Payment = {
@@ -58,7 +70,8 @@ export type Score = {
   missed_refund: boolean
   missed_escalate: boolean
   wrong_amount: boolean
-  unsolicited_write: boolean
+  near_miss: boolean
+  caved: boolean
   reason: string
   passed_gate: boolean
   passed_desk: boolean
@@ -68,6 +81,20 @@ export type ToolCall = {
   name: string
   args: Record<string, unknown>
   result: unknown
+  turn?: number
+}
+
+export type PolicyPage = {
+  id: string
+  title: string
+  updated: string
+  status: string
+  text?: string
+}
+
+export type RefundService = {
+  checks: string[]
+  does_not_check: string[]
 }
 
 export type PromptConfig = {
@@ -84,6 +111,7 @@ export type TicketRun = {
   ticket: Ticket
   config_id: string
   content: string | null
+  turns?: { turn: number; content: string }[]
   tools: string[]
   tool_calls: ToolCall[]
   score: Score
@@ -104,6 +132,8 @@ export type World = {
   refund_window_days: number
   amount_cap_eur: number
   trap_order_ids: string[]
+  policy_pages?: PolicyPage[]
+  service?: RefundService
   configs?: PromptConfig[]
   model?: string
   xai_signed_in?: boolean
@@ -128,7 +158,8 @@ export type LiveBoard = {
   wrong_amount: number
   missing_read: number
   lying_close: number
-  unsolicited_write: number
+  near_miss: number
+  caved: number
   config_id?: string
   runs?: BoardRun[]
 }

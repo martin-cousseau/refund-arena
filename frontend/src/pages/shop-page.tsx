@@ -11,32 +11,6 @@ import { CLAUSE_TONE } from "@/lib/clauses"
 import { isMustPay, orderFlags } from "@/lib/orders"
 import { cn } from "cn"
 
-function PolicyDoc({ text }: { text: string }) {
-  const blocks = text.split(/\n{2,}/)
-  return (
-    <div className="flex flex-col gap-4">
-      {blocks.map((block, index) => {
-        const lines = block.split("\n").filter((line) => !/^=+$/.test(line.trim()))
-        if (lines.length === 0) return null
-        const heading = lines[0] && lines[0].length < 40 && !lines[0].startsWith("-") && lines.length > 1
-        if (heading) {
-          return (
-            <section key={index}>
-              <h3 className="mb-1.5 text-sm font-medium tracking-tight">{lines[0]}</h3>
-              <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-muted-foreground">{lines.slice(1).join("\n")}</p>
-            </section>
-          )
-        }
-        return (
-          <p key={index} className="text-[13px] leading-relaxed whitespace-pre-wrap">
-            {block}
-          </p>
-        )
-      })}
-    </div>
-  )
-}
-
 export function ShopPage() {
   const { world, loading } = useArena()
   const navigate = useNavigate()
@@ -57,8 +31,9 @@ export function ShopPage() {
       <div className="mb-4">
         <h1 className="text-lg font-medium tracking-tight">North & Co</h1>
         <p className="text-[13px] text-muted-foreground">
-          {world.orders.length} orders · {payable} payable · {traps.size} trap. Close pairs: day 14/15, €150/€151, tags
-          on/off, same SKU different customer. Window {world.refund_window_days}d · cap €{world.amount_cap_eur}.
+          {world.orders.length} orders · {payable} payable on the row · {traps.size} ineligible rows. Close pairs: day
+          14/15, €150/€151, tags on/off, same SKU different customer. Window {world.refund_window_days}d · cap €
+          {world.amount_cap_eur}. Ownership is not an order flag. It is the caller.
         </p>
       </div>
       <Tabs defaultValue="orders">
@@ -91,7 +66,7 @@ export function ShopPage() {
                   const must = isMustPay(row, traps, world.refund_window_days, world.amount_cap_eur)
                   const trap = traps.has(row.id)
                   const flags = orderFlags(row, traps, world.refund_window_days, world.amount_cap_eur).filter(
-                    (flag) => flag !== "trap" && flag !== "eligible"
+                    (flag) => flag !== "payable" && flag !== "ineligible"
                   )
                   return (
                     <TableRow
@@ -110,7 +85,12 @@ export function ShopPage() {
                           ) : null}
                         </div>
                       </TableCell>
-                      <TableCell className="text-[13px]">{row.customer}</TableCell>
+                      <TableCell className="text-[13px]">
+                        <div>{row.customer}</div>
+                        {row.customer_id ? (
+                          <p className="font-mono text-[11px] text-muted-foreground">{row.customer_id}</p>
+                        ) : null}
+                      </TableCell>
                       <TableCell className="text-right font-mono text-[12px]">{row.days_since_delivery}</TableCell>
                       <TableCell className="text-right font-mono text-[12px]">€{row.amount_eur}</TableCell>
                       <TableCell>
@@ -141,11 +121,27 @@ export function ShopPage() {
           </div>
         </TabsContent>
         <TabsContent value="policy" className="mt-4">
-          <div className="rounded-xl border bg-card p-5">
-            <p className="mb-4 text-[12px] text-muted-foreground">
-              The Policy config inlines this. Production still calls read_policy.
+          <div className="mb-3 rounded-xl border bg-card p-4 text-[13px]">
+            <p className="font-medium">Refund service</p>
+            <p className="mt-1 text-muted-foreground">
+              Checks {(world.service?.checks ?? []).join(", ") || "the row"}. Does not check{" "}
+              {(world.service?.does_not_check ?? []).join(", ") || "nothing"}. The Policy prompt inlines current pages
+              only. The archive is available through read_policy.
             </p>
-            <PolicyDoc text={world.policy} />
+          </div>
+          <div className="flex flex-col gap-3">
+            {(world.policy_pages ?? []).map((page) => (
+              <section key={page.id} className="rounded-xl border bg-card p-4">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-medium">{page.title}</h3>
+                  <Tag tone={page.status === "current" ? "green" : "amber"}>{page.status}</Tag>
+                  <span className="font-mono text-[11px] text-muted-foreground">
+                    {page.id} · {page.updated}
+                  </span>
+                </div>
+                <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-muted-foreground">{page.text}</p>
+              </section>
+            ))}
           </div>
         </TabsContent>
         <TabsContent value="ledger" className="mt-4">

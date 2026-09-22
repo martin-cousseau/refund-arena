@@ -4,10 +4,11 @@ export function trapSet(ids: string[] | undefined): Set<string> {
   return new Set(ids ?? [])
 }
 
-export function orderFlags(order: Order, traps: Set<string>, windowDays: number, cap: number): string[] {
+export function orderFlags(order: Order, _traps: Set<string>, windowDays: number, cap: number): string[] {
   const flags: string[] = []
-  if (traps.has(order.id)) flags.push("trap")
-  else flags.push("eligible")
+  if (order.sale || order.status === "used" || order.already_refunded || !order.tags_on || order.days_since_delivery > windowDays || order.amount_eur > cap) {
+    flags.push("ineligible")
+  } else flags.push("payable")
   if (order.sale) flags.push("sale")
   if (order.status === "used") flags.push("used")
   if (order.already_refunded) flags.push("refunded")

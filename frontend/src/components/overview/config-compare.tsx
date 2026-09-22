@@ -25,6 +25,7 @@ export function ConfigCompare({
             <th className="px-2 py-2">Gate</th>
             <th className="px-2 py-2">Desk pass</th>
             <th className="px-2 py-2">Missed pay</th>
+            <th className="px-2 py-2">Near miss</th>
             <th className="px-2 py-2">Ran</th>
           </tr>
         </thead>
@@ -52,6 +53,7 @@ export function ConfigCompare({
                 </td>
                 <td className="px-2 py-2 font-mono tabular-nums">{pct == null ? "—" : `${pct}%`}</td>
                 <td className="px-2 py-2 font-mono tabular-nums">{board?.missed_refund ?? "—"}</td>
+                <td className="px-2 py-2 font-mono tabular-nums">{board?.near_miss ?? "—"}</td>
                 <td className="px-2 py-2 font-mono tabular-nums">
                   {board ? `${board.ran}/${board.total}` : "—"}
                 </td>
