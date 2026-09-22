@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
 import { fetchBoard, fetchJob, fetchRuns, fetchWorld, submitJob } from "@/lib/api"
 import { emptyBoard } from "@/lib/board"
@@ -7,6 +7,7 @@ import { normalizeScore } from "@/lib/result"
 import type { ArenaJob, LiveBoard, PromptConfig, TicketRun, World } from "@/lib/types"
 
 const STORAGE_KEY = "refund-arena-config"
+const EMPTY_RUNS: Record<string, TicketRun> = {}
 
 function normalizeBoard(board: LiveBoard): LiveBoard {
   return {
@@ -17,6 +18,12 @@ function normalizeBoard(board: LiveBoard): LiveBoard {
 
 function isActiveStatus(status: ArenaJob["status"]): boolean {
   return status === "queued" || status === "running" || status === "cancelling"
+}
+
+function mapRuns(rows: TicketRun[]): Record<string, TicketRun> {
+  const map: Record<string, TicketRun> = {}
+  for (const row of rows) map[row.ticket.id] = row
+  return map
 }
 
 type ArenaContextValue = {
@@ -47,37 +54,67 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
   const [configId, setConfigIdState] = useState(() => localStorage.getItem(STORAGE_KEY) || "production")
   const [board, setBoardState] = useState<LiveBoard>(() => emptyBoard(0, "production"))
   const [boardsByConfig, setBoardsByConfig] = useState<Record<string, LiveBoard>>({})
-  const [runsByTicket, setRunsByTicket] = useState<Record<string, TicketRun>>({})
-  const [job, setJob] = useState<ArenaJob | null>(null)
+  const [runsByConfig, setRunsByConfig] = useState<Record<string, Record<string, TicketRun>>>({})
+  const [jobByConfig, setJobByConfig] = useState<Record<string, ArenaJob | null>>({})
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   const configs = useMemo(() => world?.configs ?? [], [world])
   const config = configs.find((row) => row.id === configId) ?? configs[0] ?? null
   const activeConfigId = config?.id ?? configId
+  const runsByTicket = runsByConfig[activeConfigId] ?? EMPTY_RUNS
+  const job = jobByConfig[activeConfigId] ?? null
+
+  const configIdRef = useRef(activeConfigId)
+  const boardsRef = useRef(boardsByConfig)
+  const ticketCountRef = useRef(0)
+  configIdRef.current = activeConfigId
+  boardsRef.current = boardsByConfig
+  ticketCountRef.current = world?.tickets.length ?? 0
+
+  const applyBoard = useCallback((next: LiveBoard) => {
+    const normalized = normalizeBoard(next)
+    const cid = normalized.config_id
+    if (cid) {
+      boardsRef.current = { ...boardsRef.current, [cid]: normalized }
+      setBoardsByConfig((prev) => ({ ...prev, [cid]: normalized }))
+    }
+    if (!cid || cid === configIdRef.current) {
+      setBoardState(normalized)
+    }
+  }, [])
 
   const setConfigId = useCallback((id: string) => {
     localStorage.setItem(STORAGE_KEY, id)
     setConfigIdState(id)
-  }, [])
-
-  const setBoard = useCallback((next: LiveBoard) => {
-    const normalized = normalizeBoard(next)
-    setBoardState(normalized)
-    if (normalized.config_id) {
-      setBoardsByConfig((prev) => ({ ...prev, [normalized.config_id!]: normalized }))
-    }
+    const cached = boardsRef.current[id]
+    setBoardState(cached ?? emptyBoard(ticketCountRef.current, id))
   }, [])
 
   const setRun = useCallback((run: TicketRun) => {
-    setRunsByTicket((prev) => ({ ...prev, [run.ticket.id]: run }))
+    const cid = run.config_id || configIdRef.current
+    setRunsByConfig((prev) => ({
+      ...prev,
+      [cid]: { ...prev[cid], [run.ticket.id]: run },
+    }))
   }, [])
+
+  const setJob = useCallback(
+    (next: ArenaJob | null) => {
+      if (!next) {
+        const cid = configIdRef.current
+        setJobByConfig((prev) => ({ ...prev, [cid]: null }))
+        return
+      }
+      setJobByConfig((prev) => ({ ...prev, [next.config_id]: next }))
+      if (next.board) applyBoard(next.board)
+    },
+    [applyBoard]
+  )
 
   const loadRuns = useCallback(async (id: string) => {
     const rows = await fetchRuns(id)
-    const map: Record<string, TicketRun> = {}
-    for (const row of rows) map[row.ticket.id] = row
-    setRunsByTicket(map)
+    setRunsByConfig((prev) => ({ ...prev, [id]: mapRuns(rows) }))
   }, [])
 
   const loadCompare = useCallback(async (rows: PromptConfig[]) => {
@@ -90,7 +127,9 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
         }
       })
     )
-    setBoardsByConfig(Object.fromEntries(entries))
+    const next = Object.fromEntries(entries)
+    boardsRef.current = { ...boardsRef.current, ...next }
+    setBoardsByConfig((prev) => ({ ...prev, ...next }))
   }, [])
 
   const reload = useCallback(async () => {
@@ -102,15 +141,15 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
       : next.configs?.[0]?.id ?? "production"
     if (selected !== configId) setConfigId(selected)
     const nextBoard = await fetchBoard(selected)
-    setBoard(nextBoard)
+    applyBoard(nextBoard)
     await Promise.all([loadRuns(selected), loadCompare(next.configs ?? [])])
-  }, [configId, loadCompare, loadRuns, setBoard, setConfigId])
+  }, [applyBoard, configId, loadCompare, loadRuns, setConfigId])
 
   const refreshRuns = useCallback(async () => {
     const nextBoard = await fetchBoard(activeConfigId)
-    setBoard(nextBoard)
+    applyBoard(nextBoard)
     await Promise.all([loadRuns(activeConfigId), loadCompare(configs)])
-  }, [activeConfigId, configs, loadCompare, loadRuns, setBoard])
+  }, [activeConfigId, applyBoard, configs, loadCompare, loadRuns])
 
   const queueJob = useCallback(
     async (body: { sample?: number; all?: boolean; ticket_ids?: string[]; concurrency?: number }) => {
@@ -124,7 +163,7 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
       })
       setJob(next)
     },
-    [activeConfigId]
+    [activeConfigId, setJob]
   )
 
   useEffect(() => {
@@ -139,7 +178,7 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
         if (selected !== configId) setConfigId(selected)
         const nextBoard = await fetchBoard(selected)
         if (cancelled) return
-        setBoard(nextBoard)
+        applyBoard(nextBoard)
         setError(null)
         await Promise.all([loadRuns(selected), loadCompare(next.configs ?? [])])
       })
@@ -162,10 +201,8 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
     Promise.all([fetchBoard(activeConfigId), fetchRuns(activeConfigId)])
       .then(([nextBoard, rows]) => {
         if (cancelled) return
-        setBoard(nextBoard)
-        const map: Record<string, TicketRun> = {}
-        for (const row of rows) map[row.ticket.id] = row
-        setRunsByTicket(map)
+        applyBoard(nextBoard)
+        setRunsByConfig((prev) => ({ ...prev, [activeConfigId]: mapRuns(rows) }))
       })
       .catch((err: unknown) => {
         if (!cancelled) setError(err instanceof Error ? err.message : "Could not load board.")
@@ -173,26 +210,35 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [activeConfigId, setBoard, world])
+  }, [activeConfigId, applyBoard, world])
+
+  const activeJobKey = Object.values(jobByConfig)
+    .filter((row): row is ArenaJob => Boolean(row && isActiveStatus(row.status)))
+    .map((row) => row.id)
+    .sort()
+    .join(",")
 
   useEffect(() => {
-    if (!job || !isActiveStatus(job.status)) return undefined
+    if (!activeJobKey) return undefined
+    const ids = activeJobKey.split(",")
     const timer = window.setInterval(() => {
-      void fetchJob(job.id)
-        .then((next) => {
-          setJob(next)
-          if (next.board) setBoard(next.board)
-          if (!isActiveStatus(next.status)) {
-            void loadRuns(activeConfigId)
-            void loadCompare(configs)
-          }
-        })
-        .catch((err: unknown) => {
-          setError(err instanceof Error ? err.message : "Job poll failed.")
-        })
+      for (const id of ids) {
+        void fetchJob(id)
+          .then((next) => {
+            setJobByConfig((prev) => ({ ...prev, [next.config_id]: next }))
+            if (next.board) applyBoard(next.board)
+            if (!isActiveStatus(next.status)) {
+              void loadRuns(next.config_id)
+              void loadCompare(configs)
+            }
+          })
+          .catch((err: unknown) => {
+            setError(err instanceof Error ? err.message : "Job poll failed.")
+          })
+      }
     }, 800)
     return () => window.clearInterval(timer)
-  }, [activeConfigId, configs, job, loadCompare, loadRuns, setBoard])
+  }, [activeJobKey, applyBoard, configs, loadCompare, loadRuns])
 
   const value = useMemo(
     () => ({
@@ -208,7 +254,7 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
       loading,
       setConfigId,
       setError,
-      setBoard,
+      setBoard: applyBoard,
       setJob,
       setRun,
       reload,
@@ -227,7 +273,8 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
       error,
       loading,
       setConfigId,
-      setBoard,
+      applyBoard,
+      setJob,
       setRun,
       reload,
       refreshRuns,

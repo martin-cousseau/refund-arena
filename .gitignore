@@ -33,6 +33,7 @@ backend/shop/data/ledger.json
 backend/shop/data/configs.json
 backend/shop/results/*.json
 backend/shop/results/*.jsonl
+backend/shop/data/generated/jobs/
 
 # Asset render scratch
 docs/assets/_build/

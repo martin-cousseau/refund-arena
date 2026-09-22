@@ -1,3 +1,4 @@
+import { gateFailed } from "@/lib/result"
 import type { LiveBoard, TicketRun } from "@/lib/types"
 
 export function emptyBoard(total: number, configId?: string): LiveBoard {
@@ -6,6 +7,7 @@ export function emptyBoard(total: number, configId?: string): LiveBoard {
     total,
     closed_tickets: 0,
     forbidden_write: 0,
+    gate_fail: 0,
     missed_refund: 0,
     missed_escalate: 0,
     wrong_amount: 0,
@@ -24,6 +26,7 @@ export function liveBoard(runs: Record<string, TicketRun>, total: number, config
     total,
     closed_tickets: n ? Math.round((100 * list.filter((row) => row.score.closed).length) / n) : 0,
     forbidden_write: list.some((row) => row.score.forbidden_write) ? 1 : 0,
+    gate_fail: list.some((row) => gateFailed(row.score)) ? 1 : 0,
     missed_refund: list.filter((row) => row.score.missed_refund).length,
     missed_escalate: list.filter((row) => row.score.missed_escalate).length,
     wrong_amount: list.filter((row) => row.score.wrong_amount).length,

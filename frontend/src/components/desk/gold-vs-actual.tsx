@@ -1,21 +1,35 @@
 import { Tag } from "@/components/ui/tag"
 import { goldLabel } from "@/lib/clauses"
-import type { Ticket, TicketRun } from "@/lib/types"
+import type { GoldWrite, Ticket, TicketRun } from "@/lib/types"
 
-function Check({ ok, label }: { ok: boolean; label: string }) {
+type CheckStatus = "match" | "miss" | "extra"
+
+function Check({ status, label }: { status: CheckStatus; label: string }) {
   return (
     <div className="flex items-center justify-between gap-2 text-[12px]">
       <span>{label}</span>
-      <Tag tone={ok ? "green" : "rose"}>{ok ? "match" : "miss"}</Tag>
+      <Tag tone={status === "match" ? "green" : status === "extra" ? "amber" : "rose"}>
+        {status}
+      </Tag>
     </div>
   )
 }
 
+function actualWriteOf(run: TicketRun): GoldWrite {
+  if (run.tools.includes("issue_refund")) return "issue_refund"
+  if (run.tools.includes("escalate")) return "escalate"
+  return "none"
+}
+
+function writeStatus(gold: GoldWrite, actual: GoldWrite): CheckStatus {
+  if (actual === gold) return "match"
+  if (gold === "none" && actual === "escalate") return "extra"
+  return "miss"
+}
+
 export function GoldVsActual({ ticket, run }: { ticket: Ticket; run?: TicketRun | null }) {
   const goldWrite = ticket.gold_write
-  const actualRefund = Boolean(run?.tools.includes("issue_refund"))
-  const actualEsc = Boolean(run?.tools.includes("escalate"))
-  const actualWrite = actualRefund ? "issue_refund" : actualEsc ? "escalate" : "none"
+  const actualWrite = run ? actualWriteOf(run) : "none"
   const paid = (run?.payments_delta ?? []).filter((row) => row.source === "issue_refund")
   const goldToolsOk =
     !ticket.gold_tools?.length || ticket.gold_tools.every((name) => run?.tools.includes(name))
@@ -38,8 +52,8 @@ export function GoldVsActual({ ticket, run }: { ticket: Ticket; run?: TicketRun 
         <h3 className="mb-1.5 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">Actual</h3>
         {run ? (
           <div className="flex flex-col gap-1.5">
-            <Check ok={actualWrite === goldWrite || (goldWrite === "none" && !actualRefund)} label={`write · ${actualWrite}`} />
-            <Check ok={goldToolsOk} label="required reads" />
+            <Check status={writeStatus(goldWrite, actualWrite)} label={`write · ${actualWrite}`} />
+            <Check status={goldToolsOk ? "match" : "miss"} label="required reads" />
             {paid.length > 0 ? (
               <p className="font-mono text-[11px] text-tag-rose">
                 paid {paid.map((row) => `${row.order_id} €${row.amount_eur}`).join(", ")}

@@ -224,7 +224,7 @@ export function QueuePage() {
         rows={listed}
         selectedId={selectedId}
         onSelect={selectTicket}
-        pulseGate={jobActive && board.forbidden_write === 1}
+        pulseGate={jobActive && (board.gate_fail === 1 || board.forbidden_write === 1)}
       />
     </div>
   )

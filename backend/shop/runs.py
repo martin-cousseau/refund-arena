@@ -7,7 +7,8 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from shop.score import Board, TicketScore, score_run
+from shop.claim_parse import prefetch_claims
+from shop.score import Board, TicketScore, score_run, score_ticket
 from shop.store import SHOP_DIR, load_tickets
 
 RESULTS_DIR = SHOP_DIR / "results"
@@ -85,6 +86,7 @@ def board_for(config_id: str, *, total: int | None = None) -> dict[str, Any]:
     if not scores:
         payload["closed_tickets"] = 0
         payload["forbidden_write"] = 0
+        payload["gate_fail"] = 0
     payload["config_id"] = config_id
     payload["ran"] = len(scores)
     payload["total"] = n_tickets
@@ -99,6 +101,85 @@ def board_for(config_id: str, *, total: int | None = None) -> dict[str, Any]:
         for row in latest.values()
     ]
     return payload
+
+
+def _without_rows(after: list[dict[str, Any]], delta: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    keys = {(row.get("order_id"), row.get("at"), row.get("source"), row.get("reason")) for row in delta}
+    return [
+        row
+        for row in after
+        if (row.get("order_id"), row.get("at"), row.get("source"), row.get("reason")) not in keys
+    ]
+
+
+def rescore_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    """Recompute score from the stored trajectory. Does not call the model."""
+    ticket = payload.get("ticket") or {}
+    after_pay = list(payload.get("payments") or [])
+    delta_pay = list(payload.get("payments_delta") or [])
+    after_esc = list(payload.get("escalations") or [])
+    delta_esc = list(payload.get("escalations_delta") or [])
+    run = {
+        "content": payload.get("content") or "",
+        "tools": payload.get("tool_calls")
+        or [{"name": name} for name in (payload.get("tools") or [])],
+    }
+    scored = score_ticket(
+        ticket,
+        run,
+        payments_before=_without_rows(after_pay, delta_pay),
+        payments_after=after_pay,
+        escalations_before=_without_rows(after_esc, delta_esc),
+        escalations_after=after_esc,
+    )
+    next_payload = dict(payload)
+    next_payload["score"] = {
+        "forbidden_write": scored.forbidden_write,
+        "missing_read": scored.missing_read,
+        "lying_close": scored.lying_close,
+        "closed": scored.closed,
+        "missed_refund": scored.missed_refund,
+        "missed_escalate": scored.missed_escalate,
+        "wrong_amount": scored.wrong_amount,
+        "unsolicited_write": scored.unsolicited_write,
+        "reason": scored.reason,
+        "passed_gate": scored.passed_gate(),
+        "passed_desk": scored.passed_desk(),
+    }
+    return next_payload
+
+
+def rescore_runs() -> dict[str, int]:
+    """Rewrite scores in runs.jsonl from stored replies and ledger deltas."""
+    if not RUNS_PATH.exists():
+        return {"rows": 0, "changed": 0}
+    changed = 0
+    rewritten: list[str] = []
+    with _lock:
+        items: list[dict[str, Any] | str] = []
+        replies: list[str] = []
+        for line in RUNS_PATH.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                item = json.loads(line)
+            except json.JSONDecodeError:
+                items.append(line)
+                continue
+            items.append(item)
+            replies.append(str(item.get("content") or ""))
+        prefetch_claims(replies)
+        for item in items:
+            if isinstance(item, str):
+                rewritten.append(item)
+                continue
+            next_item = rescore_payload(item)
+            if next_item.get("score") != item.get("score"):
+                changed += 1
+            rewritten.append(json.dumps(next_item, ensure_ascii=False))
+        _ensure_dir()
+        RUNS_PATH.write_text(("\n".join(rewritten) + ("\n" if rewritten else "")), encoding="utf-8")
+    return {"rows": len(rewritten), "changed": changed}
 
 
 def reset_runs(config_id: str) -> None:
@@ -118,3 +199,11 @@ def reset_runs(config_id: str) -> None:
                 kept.append(line)
         _ensure_dir()
         RUNS_PATH.write_text(("\n".join(kept) + ("\n" if kept else "")), encoding="utf-8")
+
+
+if __name__ == "__main__":
+    import sys
+
+    stats = rescore_runs()
+    print(f"rescored {stats['rows']} runs, {stats['changed']} scores changed")
+    sys.exit(0)

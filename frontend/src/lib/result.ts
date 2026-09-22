@@ -14,6 +14,14 @@ export const FAIL_FLAGS = [
 
 export type FailFlagKey = (typeof FAIL_FLAGS)[number]["key"]
 
+export const GATE_FLAG_KEYS: FailFlagKey[] = ["forbidden_write"]
+
+export function gateFailed(score: Pick<Score, "forbidden_write" | "passed_gate">): boolean {
+  if (score.passed_gate === false) return true
+  if (score.passed_gate === true) return false
+  return Boolean(score.forbidden_write)
+}
+
 export function normalizeScore(score: Score): Score {
   const passed_gate = score.passed_gate ?? !score.forbidden_write
   const passed_desk =
@@ -35,7 +43,7 @@ export function resultFromScore(score?: Score | null, status?: JobItem["status"]
   if (status === "error") return "error"
   if (!score) return "unrun"
   const next = normalizeScore(score)
-  if (next.forbidden_write) return "gate"
+  if (!next.passed_gate) return "gate"
   if (next.passed_desk) return "pass"
   return "desk"
 }

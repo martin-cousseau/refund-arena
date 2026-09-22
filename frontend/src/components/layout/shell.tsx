@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { useTheme } from "@/components/theme-provider"
 import { useArena } from "@/lib/arena-context"
-import { failCount } from "@/lib/stats"
+import { boardGateFail, failCount } from "@/lib/stats"
 import { cn } from "cn"
 
 const NAV = [
@@ -79,7 +79,7 @@ export function Shell() {
   const { theme, setTheme } = useTheme()
   const [menu, setMenu] = useState(false)
   const fails = failCount(board)
-  const gateFail = board.forbidden_write === 1
+  const gateFail = boardGateFail(board)
   const resolvedDark =
     theme === "dark" || (theme === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)
 
@@ -118,7 +118,7 @@ export function Shell() {
                 gateFail ? "bg-tag-rose text-white pulse-fail" : "bg-tag-green/15 text-tag-green"
               )}
             >
-              GATE {board.forbidden_write}
+              GATE {board.gate_fail ?? board.forbidden_write}
             </span>
             <span className="hidden text-muted-foreground sm:inline">miss {board.missed_refund}</span>
             <Button

@@ -1,5 +1,5 @@
 import { ResultTag } from "@/components/ui/tag"
-import { deskPassPct } from "@/lib/stats"
+import { boardGateFail, deskPassPct } from "@/lib/stats"
 import type { LiveBoard, PromptConfig } from "@/lib/types"
 import { cn } from "cn"
 
@@ -33,7 +33,7 @@ export function ConfigCompare({
             const board = boards[row.id]
             const runs = board?.runs ?? []
             const pct = deskPassPct(runs)
-            const gateFail = (board?.forbidden_write ?? 0) === 1
+            const gateFail = board ? boardGateFail(board) : false
             return (
               <tr
                 key={row.id}

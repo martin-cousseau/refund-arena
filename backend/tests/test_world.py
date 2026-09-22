@@ -8,13 +8,15 @@ from shop.store import load_seed, load_tickets, reset_to_seed, trap_order_ids, w
 def test_reset_hydrates_shop_fields() -> None:
     ledger = reset_to_seed()
     by_id = {row["id"]: row for row in ledger["orders"]}
+    assert len(ledger["orders"]) == 80
     assert by_id["1088"]["sku"] == "Merino crew"
     assert by_id["1088"]["customer"] == "A. Vermeer"
     assert by_id["1088"]["days_since_delivery"] == 5
     assert by_id["1120"]["days_since_delivery"] == 14
     assert by_id["1121"]["days_since_delivery"] == 15
     seed_pays = [row for row in ledger["payments"] if row["source"] == "seed"]
-    assert [row["order_id"] for row in seed_pays] == ["1114"]
+    assert "1114" in [row["order_id"] for row in seed_pays]
+    assert len(seed_pays) >= 5
 
 
 def test_world_payload() -> None:

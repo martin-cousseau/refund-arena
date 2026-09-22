@@ -213,7 +213,7 @@ Invoke a skill by name (`/extend-agent`) or just describe the task — Claude Co
 |---|---|---|---|
 | `XAI_TOKEN_ENCRYPTION_KEY` | yes | — | Encrypts the SuperGrok OAuth session in Postgres. Generate with `python -c "from agno.utils.encryption import generate_encryption_key; print(generate_encryption_key())"`. Rotating it makes the stored session unreadable until you sign in again. |
 | `XAI_API_KEY` | no | — | Metered xAI fallback when no SuperGrok session exists (or OAuth inference is refused). Deployment check warns on this path. |
-| `OPENAI_API_KEY` | no | — | Optional. Studio image/TTS only. Models and embeddings do not use it. |
+| `OPENAI_API_KEY` | no | — | Optional. Studio image/TTS, and GPT-5.6 Luna for lying-close reply parse (`CLAIM_PARSER=luna` when set). Helpdesk inference still uses SuperGrok. |
 | `RUNTIME_ENV` | no | `prd` | `dev` disables JWT. `compose.yaml` sets it to `dev` for local; `compose.prod.yaml` sets `prd` — never hand-set `dev` on a production host, or the platform serves unauthenticated. |
 | `JWT_VERIFICATION_KEY` | prd | — | Public key from os.agno.com. Required when `RUNTIME_ENV=prd` and `authorization=True`, unless `JWT_JWKS_FILE` is set. |
 | `JWT_JWKS_FILE` | prd | — | Path to a JWKS file; alternative to `JWT_VERIFICATION_KEY` for production JWT verification. |

@@ -31,6 +31,9 @@ export type Order = {
   already_refunded: boolean
   tags_on: boolean
   refund_window_days: number
+  pair_id?: string
+  pair_role?: string
+  sku_family?: string
 }
 
 export type Payment = {
@@ -119,6 +122,7 @@ export type LiveBoard = {
   total: number
   closed_tickets: number
   forbidden_write: 0 | 1
+  gate_fail?: 0 | 1
   missed_refund: number
   missed_escalate: number
   wrong_amount: number

@@ -1,23 +1,45 @@
 import { normalizeScore } from "@/lib/result"
 import type { ArenaJob, LiveBoard, PromptConfig, TicketRun, World } from "@/lib/types"
 
+function messageFromBody(status: number, raw: string, label: string): string {
+  const trimmed = raw.trim()
+  if (status === 502 || status === 503 || status === 504 || trimmed.startsWith("<")) {
+    return "Backend is starting or unreachable. Retry in a moment."
+  }
+  try {
+    const parsed = JSON.parse(trimmed) as { detail?: unknown }
+    if (typeof parsed.detail === "string" && parsed.detail.trim()) return parsed.detail
+  } catch {
+    // not JSON
+  }
+  if (trimmed && trimmed.length < 200 && !trimmed.startsWith("<")) return trimmed
+  return `${label} failed (${status})`
+}
+
 async function readJson<T>(res: Response, label: string): Promise<T> {
   if (!res.ok) {
-    const raw = await res.text()
-    let detail = raw
-    try {
-      const parsed = JSON.parse(raw) as { detail?: unknown }
-      if (typeof parsed.detail === "string") detail = parsed.detail
-    } catch {
-      // keep the raw body
-    }
-    throw new Error(detail || `${label} failed (${res.status})`)
+    throw new Error(messageFromBody(res.status, await res.text(), label))
   }
   return (await res.json()) as T
 }
 
+async function getJson<T>(url: string, label: string, attempts = 8): Promise<T> {
+  let last = new Error(label)
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await readJson<T>(await fetch(url), label)
+    } catch (err) {
+      last = err instanceof Error ? err : new Error(String(err))
+      const retryable = /starting or unreachable|Failed to fetch|NetworkError/i.test(last.message)
+      if (!retryable || i === attempts - 1) throw last
+      await new Promise((resolve) => setTimeout(resolve, 750))
+    }
+  }
+  throw last
+}
+
 export async function fetchWorld(): Promise<World> {
-  return readJson<World>(await fetch("/arena/world"), "Load world")
+  return getJson<World>("/arena/world", "Load world")
 }
 
 export async function fetchConfigs(): Promise<PromptConfig[]> {
@@ -33,16 +55,16 @@ function withNormalizedBoard(board: LiveBoard): LiveBoard {
 }
 
 export async function fetchBoard(configId: string): Promise<LiveBoard> {
-  const board = await readJson<LiveBoard>(
-    await fetch(`/arena/board?config_id=${encodeURIComponent(configId)}`),
+  const board = await getJson<LiveBoard>(
+    `/arena/board?config_id=${encodeURIComponent(configId)}`,
     "Load board"
   )
   return withNormalizedBoard(board)
 }
 
 export async function fetchRuns(configId: string): Promise<TicketRun[]> {
-  const payload = await readJson<{ config_id: string; runs: TicketRun[] }>(
-    await fetch(`/arena/runs?config_id=${encodeURIComponent(configId)}`),
+  const payload = await getJson<{ config_id: string; runs: TicketRun[] }>(
+    `/arena/runs?config_id=${encodeURIComponent(configId)}`,
     "Load runs"
   )
   return payload.runs.map((row) => ({ ...row, score: normalizeScore(row.score) }))

@@ -11,7 +11,7 @@ import { resetRuns } from "@/lib/api"
 import { useArena } from "@/lib/arena-context"
 import { CLAUSE_TONE, goldLabel } from "@/lib/clauses"
 import { failRowClass } from "@/lib/fail-row"
-import { FAIL_FLAGS, activeFlags, resultFromScore, type FailFlagKey } from "@/lib/result"
+import { FAIL_FLAGS, GATE_FLAG_KEYS, activeFlags, resultFromScore, type FailFlagKey } from "@/lib/result"
 import { cn } from "cn"
 
 export function RunsPage() {
@@ -63,8 +63,8 @@ export function RunsPage() {
         <span className="font-mono text-[12px] tabular-nums text-muted-foreground">
           {board.ran}/{board.total} ran
         </span>
-        <span className={cn("font-mono text-[12px] tabular-nums", board.forbidden_write ? "text-tag-rose" : "text-tag-green")}>
-          gate {board.forbidden_write}
+        <span className={cn("font-mono text-[12px] tabular-nums", (board.gate_fail ?? board.forbidden_write) ? "text-tag-rose" : "text-tag-green")}>
+          gate {board.gate_fail ?? board.forbidden_write}
         </span>
         <span className="font-mono text-[12px] tabular-nums text-muted-foreground">missed-refund {board.missed_refund}</span>
         <span className="font-mono text-[12px] tabular-nums text-muted-foreground">missed-esc {board.missed_escalate}</span>
@@ -156,7 +156,7 @@ export function RunsPage() {
                   <TableCell>
                     <div className="flex flex-wrap gap-0.5">
                       {activeFlags(row.score).map((flag) => (
-                        <Tag key={flag} tone={flag === "forbidden_write" ? "rose" : "amber"}>
+                        <Tag key={flag} tone={GATE_FLAG_KEYS.includes(flag) ? "rose" : "amber"}>
                           {flag.replaceAll("_", "-")}
                         </Tag>
                       ))}

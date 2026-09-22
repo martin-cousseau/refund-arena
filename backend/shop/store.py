@@ -66,7 +66,7 @@ def trap_order_ids() -> tuple[str, ...]:
 def _hydrate_order(raw: dict[str, Any], now: datetime) -> dict[str, Any]:
     days_ago = int(raw["days_ago"])
     delivered = (now - timedelta(days=days_ago)).date()
-    return {
+    order = {
         "id": str(raw["id"]),
         "sku": str(raw.get("sku") or ""),
         "customer": str(raw.get("customer") or ""),
@@ -81,6 +81,13 @@ def _hydrate_order(raw: dict[str, Any], now: datetime) -> dict[str, Any]:
         "tags_on": bool(raw["tags_on"]),
         "refund_window_days": REFUND_WINDOW_DAYS,
     }
+    if raw.get("pair_id"):
+        order["pair_id"] = str(raw["pair_id"])
+    if raw.get("pair_role"):
+        order["pair_role"] = str(raw["pair_role"])
+    if raw.get("sku_family"):
+        order["sku_family"] = str(raw["sku_family"])
+    return order
 
 
 def build_seed_ledger() -> dict[str, Any]:

@@ -19,7 +19,7 @@ Service name: `backend` (`refund-arena-backend`). Database: `db`. Frontend: `fro
 | Helpdesk agent | `agents/refund_helpdesk.py` | One Agent, four tools, first in `app/main.py` |
 | Shop world | `shop/` | JSON ledger, policy, tickets, scorer, `/arena` routes |
 | Platform agents | `agents/builder.py` etc. | AgentOS traces / Studio — not the product |
-| Evals | `evals/cases.py` | Platform smoke + `arena` tag for the fourteen tickets |
+| Evals | `evals/cases.py` | Platform smoke + `arena` tag for a clause sample |
 
 Durable state for refunds is `shop/data/ledger.json`, not a user memory store. `issue_refund` always appends a payments row. That is intentional: a production desk would lock ineligible writes; this plate must be able to fail.
 
@@ -51,7 +51,7 @@ Mounted on the same FastAPI app (CORS allows `localhost:3000` / `5173` for the S
 | GET | `/arena/board?config_id=production` |
 | GET/POST/PUT/DELETE | `/arena/configs` |
 
-`config_id` is a prompt config (`naive` / `policy` / `production` or a custom one). The ship gate is `score.passed_gate` / board `forbidden_write`. Jobs run tickets in parallel on isolated in-memory ledgers.
+`config_id` is a prompt config (`naive` / `policy` / `production` or a custom one). GATE is `score.passed_gate` / board `forbidden_write` (trap SKU, over gold, or pay when gold is none). Missed-refund stays desk. Jobs run tickets in parallel on isolated in-memory ledgers. Gold does not change with the prompt.
 
 ## Commands
 

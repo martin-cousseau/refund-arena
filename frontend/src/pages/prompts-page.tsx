@@ -91,7 +91,7 @@ function PromptEditor({
         <div className="flex flex-1 flex-col gap-1 overflow-auto p-2">
           {configs.map((row) => {
             const board = boardsByConfig[row.id]
-            const gateFail = board && board.ran > 0 && board.forbidden_write === 1
+            const gateFail = board && board.ran > 0 && (board.gate_fail === 1 || board.forbidden_write === 1)
             const ran = board && board.ran > 0
             return (
               <button

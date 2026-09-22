@@ -10,7 +10,7 @@ import { ToolFunnel } from "@/components/overview/tool-funnel"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useArena } from "@/lib/arena-context"
-import { deskPassPct, failCount, failMix, failuresNeedingReview, passByClause, toolFunnel, trapSplit } from "@/lib/stats"
+import { boardGateFail, deskPassPct, failCount, failMix, failuresNeedingReview, passByClause, toolFunnel, trapSplit } from "@/lib/stats"
 
 export function OverviewPage() {
   const navigate = useNavigate()
@@ -28,7 +28,7 @@ export function OverviewPage() {
   const split = trapSplit(world.tickets, runs)
   const fails = failuresNeedingReview(runs, 8)
   const passPct = deskPassPct(runs)
-  const gateFail = board.forbidden_write === 1
+  const gateFail = boardGateFail(board)
   const empty = board.ran === 0
 
   return (
@@ -37,7 +37,7 @@ export function OverviewPage() {
         <div>
           <h1 className="text-lg font-medium tracking-tight">Overview</h1>
           <p className="text-[13px] text-muted-foreground">
-            {config?.name ?? configId} · closed-tickets is vanity · forbidden-write is the ship gate
+            {config?.name ?? configId} · closed-tickets is vanity · GATE is money that should not have left
           </p>
         </div>
         {empty ? (
@@ -61,9 +61,9 @@ export function OverviewPage() {
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          label="Forbidden write"
+          label="GATE"
           value={board.forbidden_write}
-          hint={`ship gate · ${config?.name ?? configId}`}
+          hint={`money that should not have left · ${config?.name ?? configId}`}
           tone={empty ? "default" : gateFail ? "gate-fail" : "gate-ok"}
           pulse={!empty && gateFail}
         />

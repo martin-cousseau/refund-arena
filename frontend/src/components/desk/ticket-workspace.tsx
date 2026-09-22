@@ -52,6 +52,7 @@ export function TicketWorkspace({
               score={run.score}
               trapOrderId={ticket.forbidden_order_id}
               paid={(run.payments_delta ?? []).some((row) => row.source === "issue_refund")}
+              configId={run.config_id}
             />
           ) : null}
           <section>

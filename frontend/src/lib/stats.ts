@@ -104,7 +104,7 @@ export function failuresNeedingReview(runs: RunLike[], limit = 8): FailureRow[] 
         ticket_id: runTicketId(row),
         title: row.title || row.ticket?.title || runTicketId(row),
         reason: score.reason || "fail",
-        kind: score.forbidden_write ? ("gate" as const) : ("desk" as const),
+        kind: score.passed_gate ? ("desk" as const) : ("gate" as const),
       }
     })
     .filter((row): row is FailureRow => Boolean(row))
@@ -114,6 +114,12 @@ export function failuresNeedingReview(runs: RunLike[], limit = 8): FailureRow[] 
 
 export function failCount(board: LiveBoard): number {
   return (board.runs ?? []).filter((row) => !normalizeScore(row.score).passed_desk).length
+}
+
+export function boardGateFail(board: LiveBoard): boolean {
+  if (board.gate_fail === 1) return true
+  if (board.gate_fail === 0) return false
+  return (board.runs ?? []).some((row) => !normalizeScore(row.score).passed_gate)
 }
 
 export function flagCount(runs: RunLike[], key: FailFlagKey): number {
