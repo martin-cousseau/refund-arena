@@ -15,7 +15,9 @@ def test_builtin_configs_seed() -> None:
     production = get_config("production")
     assert production is not None
     assert production["model"] == MODEL_ID
-    assert "issue_refund" in production["instructions"]
+    from shop.prompts import builtin_prompts
+
+    assert "propose_refund" in builtin_prompts()[2]["instructions"]
     naive = get_config("naive")
     assert naive is not None
     assert naive["model"] == MODEL_ID

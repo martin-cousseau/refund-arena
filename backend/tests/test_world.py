@@ -28,3 +28,8 @@ def test_world_payload() -> None:
     assert len(payload["tickets"]) == len(load_tickets())
     assert len(payload["orders"]) == len(load_seed()["orders"])
     assert payload["trap_order_ids"] == list(trap_order_ids())
+    pages = {page["id"]: page for page in payload["policy_pages"]}
+    assert pages["archive-2024"]["status"] == "archived"
+    assert pages["ownership"]["status"] == "current"
+    assert payload["service"]["does_not_check"] == ["ownership"]
+    assert "archive-2024" not in payload["policy"]

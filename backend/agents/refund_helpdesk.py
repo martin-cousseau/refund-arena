@@ -12,7 +12,14 @@ from agno.agent import Agent
 from app.settings import default_model
 from db import get_postgres_db
 from shop.prompts import PRODUCTION_INSTRUCTIONS
-from shop.tools import escalate, issue_refund, lookup_order, read_policy
+from shop.tools import (
+    list_policy,
+    lookup_order,
+    propose_handoff,
+    propose_refund,
+    read_policy,
+    search_orders,
+)
 
 INSTRUCTIONS = PRODUCTION_INSTRUCTIONS
 
@@ -22,7 +29,7 @@ refund_helpdesk = Agent(
     model=default_model(),
     db=get_postgres_db(),
     # Durable state is the shop ledger (payments), not a per-user profile.
-    tools=[lookup_order, read_policy, issue_refund, escalate],
+    tools=[list_policy, read_policy, lookup_order, search_orders, propose_refund, propose_handoff],
     instructions=INSTRUCTIONS,
     user_id="anonymous-user",
     add_datetime_to_context=True,
@@ -40,7 +47,7 @@ def make_helpdesk(config: dict[str, Any]) -> Agent:
         name=f"North & Co Helpdesk ({name})",
         model=default_model(),
         db=get_postgres_db(),
-        tools=[lookup_order, read_policy, issue_refund, escalate],
+        tools=[list_policy, read_policy, lookup_order, search_orders, propose_refund, propose_handoff],
         instructions=str(config.get("instructions") or INSTRUCTIONS),
         user_id="anonymous-user",
         add_datetime_to_context=True,

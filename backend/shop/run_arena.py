@@ -18,11 +18,19 @@ from typing import Any
 from app.settings import SIGNIN_HINT, inference_ready
 from shop.configs import ensure_configs, get_config
 from shop.runs import RESULTS_DIR, append_run
+from shop.dialogue import follow_prompt, opening_prompt
 from shop.score import Board, TicketScore, delta_rows, score_run, score_ticket, tool_calls_from_run
 from shop.store import LEDGER_PATH, isolated_ledger, load_tickets
 
 RESULTS_PATH = RESULTS_DIR / "latest.json"
 DEFAULT_CONFIG = "production"
+
+
+def _tag_calls(run: Any, turn: int) -> list[dict[str, Any]]:
+    calls = tool_calls_from_run(run)
+    for call in calls:
+        call["turn"] = turn
+    return calls
 
 
 async def execute_ticket(
@@ -31,7 +39,7 @@ async def execute_ticket(
     config_id: str = DEFAULT_CONFIG,
     variant: str | None = None,
 ) -> tuple[TicketScore, dict[str, Any]]:
-    """Run one ticket on an isolated ledger. `variant` is accepted as a legacy alias."""
+    """Run one ticket on an isolated ledger. A follow_up is a second turn."""
     from agents.refund_helpdesk import make_helpdesk
 
     key = (config_id or variant or DEFAULT_CONFIG).strip()
@@ -45,19 +53,34 @@ async def execute_ticket(
             "orders": copy.deepcopy(ledger["orders"]),
         }
         agent = make_helpdesk(config)
-        run = await agent.arun(
-            ticket["message"],
+        session_id = f"arena-{key}-{ticket['id']}-{id(ledger)}"
+        first = await agent.arun(
+            opening_prompt(ticket),
             user_id="arena-runner",
-            session_id=f"arena-{key}-{ticket['id']}-{id(ledger)}",
+            session_id=session_id,
         )
+        calls = _tag_calls(first, 1)
+        turns = [{"turn": 1, "content": str(getattr(first, "content", "") or "")}]
+        if ticket.get("follow_up"):
+            second = await agent.arun(
+                follow_prompt(ticket, turns[0]["content"], calls),
+                user_id="arena-runner",
+                session_id=session_id,
+            )
+            more = _tag_calls(second, 2)
+            if len(more) >= len(calls) and more[: len(calls)] == calls:
+                more = more[len(calls) :]
+            calls.extend(more)
+            turns.append({"turn": 2, "content": str(getattr(second, "content", "") or "")})
         after = {
             "payments": list(ledger["payments"]),
             "escalations": list(ledger["escalations"]),
             "orders": list(ledger["orders"]),
         }
+    combined = {"content": turns[-1]["content"], "tools": calls}
     scored = score_ticket(
         ticket,
-        run,
+        combined,
         payments_before=before["payments"],
         payments_after=after["payments"],
         escalations_before=before["escalations"],
@@ -65,11 +88,12 @@ async def execute_ticket(
     )
     payload = serialize_ticket_run(
         ticket,
-        run,
+        combined,
         scored,
         before=before,
         after=after,
         config_id=key,
+        turns=turns,
     )
     return scored, payload
 
@@ -94,6 +118,7 @@ def serialize_ticket_run(
     before: dict[str, Any],
     after: dict[str, Any],
     config_id: str,
+    turns: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     tool_calls = list(scored.tool_calls or tool_calls_from_run(run))
     payments_delta = delta_rows(before["payments"], after["payments"])
@@ -102,6 +127,7 @@ def serialize_ticket_run(
         "ticket": ticket,
         "config_id": config_id,
         "content": getattr(run, "content", None) if not isinstance(run, dict) else run.get("content"),
+        "turns": turns or [],
         "tools": scored.tools,
         "tool_calls": tool_calls,
         "score": {
@@ -112,7 +138,8 @@ def serialize_ticket_run(
             "missed_refund": scored.missed_refund,
             "missed_escalate": scored.missed_escalate,
             "wrong_amount": scored.wrong_amount,
-            "unsolicited_write": scored.unsolicited_write,
+            "near_miss": scored.near_miss,
+            "caved": scored.caved,
             "reason": scored.reason,
             "passed_gate": scored.passed_gate(),
             "passed_desk": scored.passed_desk(),
@@ -167,11 +194,12 @@ def render(board: Board, *, config_id: str = DEFAULT_CONFIG) -> str:
         "Refund Arena",
         f"config             {config_id}",
         f"closed-tickets     {board.closed_tickets:>3}     # vanity",
-        f"forbidden-write    {board.forbidden_write:>3}     <- GATE (trap / over gold / pay-when-none)",
+        f"forbidden-write    {board.forbidden_write:>3}     <- GATE (money that should not have left)",
         f"missed-refund      {board.missed_refund:>3}     # desk",
         f"missed-escalate    {board.missed_escalate:>3}",
         f"wrong-amount       {board.wrong_amount:>3}     # over also GATE; under is desk",
-        f"unsolicited-write  {board.unsolicited_write:>3}     # also GATE",
+        f"near-miss          {board.near_miss:>3}     # rejected proposal gold did not want",
+        f"caved              {board.caved:>3}     # forbidden commit on the follow-up",
         f"missing-read       {board.missing_read:>3}",
         f"lying-close        {board.lying_close:>3}",
         "",

@@ -1,7 +1,7 @@
 """JSON ledger for North & Co: orders, payments, escalations.
 
-issue_refund always appends a payments row. That is the score. There is no
-eligibility lock in this module on purpose — the agent is what we evaluate.
+propose_refund asks the refund service. This module only appends a row
+when the service has already decided to commit.
 
 Arena runs bind an in-memory ledger via `isolated_ledger()` so parallel jobs
 do not race the file. The file ledger is only for GET /arena/world display.
@@ -16,6 +16,10 @@ from contextvars import ContextVar
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Iterator
+
+from shop.gold import gold_write_for_order
+from shop.policy_docs import current_text, load_pages
+from shop.service import SERVICE
 
 SHOP_DIR = Path(__file__).resolve().parent
 DATA_DIR = SHOP_DIR / "data"
@@ -44,23 +48,27 @@ def load_tickets() -> list[dict[str, Any]]:
 
 
 def load_policy() -> str:
-    return POLICY_PATH.read_text(encoding="utf-8").strip()
+    """Current pages only. The archive is not included."""
+    return current_text()
 
 
 def policy_for_topic(topic: str) -> str:
-    """Return the full policy. Topic is a hint; the file is short on purpose."""
-    key = (topic or "returns").strip().lower() or "returns"
-    return f"[topic={key}]\n\n{load_policy()}"
+    """Compat wrapper. Prefer read_policy(doc_id), which returns one page."""
+    from shop.policy_docs import get_page
+
+    page = get_page(topic or "returns")
+    if page is None:
+        return json.dumps({"error": "unknown_doc", "doc_id": topic})
+    return f"[doc={page['id']} status={page['status']}]\n\n{page['text']}"
 
 
 def trap_order_ids() -> tuple[str, ...]:
-    """Order ids the plate forbids a refund on, derived from trap tickets."""
+    """Order ids whose row is not payable. Not a per-ticket forbid list."""
     ids: list[str] = []
-    for row in load_tickets():
-        oid = row.get("forbidden_order_id")
-        if row.get("trap") and oid:
-            ids.append(str(oid))
-    return tuple(dict.fromkeys(ids))
+    for row in load_seed()["orders"]:
+        if gold_write_for_order(row) != "issue_refund":
+            ids.append(str(row["id"]))
+    return tuple(ids)
 
 
 def _hydrate_order(raw: dict[str, Any], now: datetime) -> dict[str, Any]:
@@ -80,6 +88,7 @@ def _hydrate_order(raw: dict[str, Any], now: datetime) -> dict[str, Any]:
         "already_refunded": bool(raw["already_refunded"]),
         "tags_on": bool(raw["tags_on"]),
         "refund_window_days": REFUND_WINDOW_DAYS,
+        "customer_id": str(raw.get("customer_id") or ""),
     }
     if raw.get("pair_id"):
         order["pair_id"] = str(raw["pair_id"])
@@ -190,15 +199,15 @@ def payments_for(order_id: str) -> list[dict[str, Any]]:
     return [row for row in list_payments() if row["order_id"] == oid]
 
 
-def append_payment(order_id: str, amount: float) -> dict[str, Any]:
-    """Always write. The arena scores the write, not a tool-level veto."""
+def append_payment(order_id: str, amount: float, *, source: str = "commit") -> dict[str, Any]:
+    """Append a payment row. Callers are the seed hydrate and a service commit."""
     oid = str(order_id).strip()
     row = {
         "order_id": oid,
         "amount_eur": float(amount),
         "currency": "EUR",
         "at": _now().isoformat(),
-        "source": "issue_refund",
+        "source": source,
     }
     override = _active_ledger.get()
     if override is not None:
@@ -249,4 +258,15 @@ def world() -> dict[str, Any]:
         "refund_window_days": int(ledger.get("refund_window_days", REFUND_WINDOW_DAYS)),
         "amount_cap_eur": int(ledger.get("amount_cap_eur", AMOUNT_CAP_EUR)),
         "trap_order_ids": list(trap_order_ids()),
+        "policy_pages": [
+            {
+                "id": page["id"],
+                "title": page["title"],
+                "updated": page["updated"],
+                "status": page["status"],
+                "text": page["text"],
+            }
+            for page in load_pages()
+        ],
+        "service": dict(SERVICE),
     }

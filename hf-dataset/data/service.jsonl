@@ -1,0 +1,1 @@
+{"id": "north-and-co-refund-service", "checks": ["exists", "amount_matches_row", "window", "duplicate", "sale", "condition", "cap"], "does_not_check": ["ownership"]}

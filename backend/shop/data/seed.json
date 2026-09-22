@@ -15,7 +15,8 @@
       "tags_on": true,
       "sku_family": "merino-crew",
       "pair_id": "merino-window",
-      "pair_role": "in-window"
+      "pair_role": "in-window",
+      "customer_id": "a-vermeer"
     },
     {
       "id": "1042",
@@ -30,7 +31,8 @@
       "tags_on": true,
       "sku_family": "merino-crew",
       "pair_id": "merino-window",
-      "pair_role": "day-41"
+      "pair_role": "day-41",
+      "customer_id": "b-kowalski"
     },
     {
       "id": "1101",
@@ -45,7 +47,8 @@
       "tags_on": false,
       "sku_family": "canvas-jacket",
       "pair_id": "canvas-used",
-      "pair_role": "used"
+      "pair_role": "used",
+      "customer_id": "c-rossi"
     },
     {
       "id": "1066",
@@ -60,7 +63,8 @@
       "tags_on": true,
       "sku_family": "outlet-tee",
       "pair_id": "outlet-canonical",
-      "pair_role": "sale"
+      "pair_role": "sale",
+      "customer_id": "d-nguyen"
     },
     {
       "id": "1090",
@@ -75,7 +79,8 @@
       "tags_on": true,
       "sku_family": "wool-coat",
       "pair_id": "coat-cap",
-      "pair_role": "over-cap"
+      "pair_role": "over-cap",
+      "customer_id": "e-berg"
     },
     {
       "id": "1114",
@@ -90,7 +95,8 @@
       "tags_on": true,
       "sku_family": "merino-crew",
       "pair_id": "merino-double",
-      "pair_role": "refunded"
+      "pair_role": "refunded",
+      "customer_id": "f-dubois"
     },
     {
       "id": "1120",
@@ -105,7 +111,8 @@
       "tags_on": true,
       "sku_family": "linen-shirt",
       "pair_id": "linen-window",
-      "pair_role": "day-14"
+      "pair_role": "day-14",
+      "customer_id": "g-novak"
     },
     {
       "id": "1121",
@@ -120,7 +127,8 @@
       "tags_on": true,
       "sku_family": "linen-shirt",
       "pair_id": "linen-window",
-      "pair_role": "day-15"
+      "pair_role": "day-15",
+      "customer_id": "h-silva"
     },
     {
       "id": "2101",
@@ -135,7 +143,8 @@
       "tags_on": true,
       "sku_family": "cord-trousers",
       "pair_id": "cord-window",
-      "pair_role": "day-14"
+      "pair_role": "day-14",
+      "customer_id": "irena-vesely"
     },
     {
       "id": "2102",
@@ -150,7 +159,8 @@
       "tags_on": true,
       "sku_family": "cord-trousers",
       "pair_id": "cord-window",
-      "pair_role": "day-15"
+      "pair_role": "day-15",
+      "customer_id": "jonas-holm"
     },
     {
       "id": "2103",
@@ -165,7 +175,8 @@
       "tags_on": true,
       "sku_family": "oxford-shirt",
       "pair_id": "oxford-window",
-      "pair_role": "day-14"
+      "pair_role": "day-14",
+      "customer_id": "marta-kovacs"
     },
     {
       "id": "2104",
@@ -180,7 +191,8 @@
       "tags_on": true,
       "sku_family": "oxford-shirt",
       "pair_id": "oxford-window",
-      "pair_role": "day-15"
+      "pair_role": "day-15",
+      "customer_id": "nils-andersen"
     },
     {
       "id": "2105",
@@ -195,7 +207,8 @@
       "tags_on": true,
       "sku_family": "denim-jacket",
       "pair_id": "denim-window",
-      "pair_role": "day-14"
+      "pair_role": "day-14",
+      "customer_id": "sofia-ricci"
     },
     {
       "id": "2106",
@@ -210,7 +223,8 @@
       "tags_on": true,
       "sku_family": "denim-jacket",
       "pair_id": "denim-window",
-      "pair_role": "day-15"
+      "pair_role": "day-15",
+      "customer_id": "piotr-zielinski"
     },
     {
       "id": "2107",
@@ -225,7 +239,8 @@
       "tags_on": true,
       "sku_family": "silk-blouse",
       "pair_id": "silk-window",
-      "pair_role": "day-14"
+      "pair_role": "day-14",
+      "customer_id": "amira-haddad"
     },
     {
       "id": "2108",
@@ -240,7 +255,8 @@
       "tags_on": true,
       "sku_family": "silk-blouse",
       "pair_id": "silk-window",
-      "pair_role": "day-15"
+      "pair_role": "day-15",
+      "customer_id": "elise-moreau"
     },
     {
       "id": "2109",
@@ -255,7 +271,8 @@
       "tags_on": true,
       "sku_family": "cotton-hoodie",
       "pair_id": "hoodie-window",
-      "pair_role": "day-14"
+      "pair_role": "day-14",
+      "customer_id": "lukas-novotny"
     },
     {
       "id": "2110",
@@ -270,7 +287,8 @@
       "tags_on": true,
       "sku_family": "cotton-hoodie",
       "pair_id": "hoodie-window",
-      "pair_role": "day-15"
+      "pair_role": "day-15",
+      "customer_id": "yara-mensah"
     },
     {
       "id": "2111",
@@ -285,7 +303,8 @@
       "tags_on": true,
       "sku_family": "recycled-fleece",
       "pair_id": "fleece-window",
-      "pair_role": "day-14"
+      "pair_role": "day-14",
+      "customer_id": "hanna-lind"
     },
     {
       "id": "2112",
@@ -300,7 +319,8 @@
       "tags_on": true,
       "sku_family": "recycled-fleece",
       "pair_id": "fleece-window",
-      "pair_role": "day-15"
+      "pair_role": "day-15",
+      "customer_id": "omar-farouk"
     },
     {
       "id": "2113",
@@ -315,7 +335,8 @@
       "tags_on": true,
       "sku_family": "pleated-skirt",
       "pair_id": "skirt-window",
-      "pair_role": "day-14"
+      "pair_role": "day-14",
+      "customer_id": "clara-jensen"
     },
     {
       "id": "2114",
@@ -330,7 +351,8 @@
       "tags_on": true,
       "sku_family": "pleated-skirt",
       "pair_id": "skirt-window",
-      "pair_role": "day-15"
+      "pair_role": "day-15",
+      "customer_id": "ines-costa"
     },
     {
       "id": "2115",
@@ -345,7 +367,8 @@
       "tags_on": true,
       "sku_family": "merino-socks-3-pack",
       "pair_id": "socks-window",
-      "pair_role": "day-14"
+      "pair_role": "day-14",
+      "customer_id": "tomasz-wojcik"
     },
     {
       "id": "2116",
@@ -360,7 +383,8 @@
       "tags_on": true,
       "sku_family": "merino-socks-3-pack",
       "pair_id": "socks-window",
-      "pair_role": "day-15"
+      "pair_role": "day-15",
+      "customer_id": "aisha-rahman"
     },
     {
       "id": "2117",
@@ -375,7 +399,8 @@
       "tags_on": true,
       "sku_family": "cashmere-scarf",
       "pair_id": "scarf-cap",
-      "pair_role": "eur-150"
+      "pair_role": "eur-150",
+      "customer_id": "priya-shah"
     },
     {
       "id": "2118",
@@ -390,7 +415,8 @@
       "tags_on": true,
       "sku_family": "cashmere-scarf",
       "pair_id": "scarf-cap",
-      "pair_role": "eur-151"
+      "pair_role": "eur-151",
+      "customer_id": "benoit-laurent"
     },
     {
       "id": "2119",
@@ -405,7 +431,8 @@
       "tags_on": true,
       "sku_family": "leather-weekender",
       "pair_id": "weekender-cap",
-      "pair_role": "eur-150"
+      "pair_role": "eur-150",
+      "customer_id": "koen-de-vries"
     },
     {
       "id": "2120",
@@ -420,7 +447,8 @@
       "tags_on": true,
       "sku_family": "leather-weekender",
       "pair_id": "weekender-cap",
-      "pair_role": "eur-151"
+      "pair_role": "eur-151",
+      "customer_id": "natalia-popov"
     },
     {
       "id": "2121",
@@ -435,7 +463,8 @@
       "tags_on": true,
       "sku_family": "tailored-blazer",
       "pair_id": "blazer-cap",
-      "pair_role": "eur-150"
+      "pair_role": "eur-150",
+      "customer_id": "mei-chen"
     },
     {
       "id": "2122",
@@ -450,7 +479,8 @@
       "tags_on": true,
       "sku_family": "tailored-blazer",
       "pair_id": "blazer-cap",
-      "pair_role": "eur-151"
+      "pair_role": "eur-151",
+      "customer_id": "rasmus-berg"
     },
     {
       "id": "2123",
@@ -465,7 +495,8 @@
       "tags_on": true,
       "sku_family": "knit-dress",
       "pair_id": "dress-cap",
-      "pair_role": "eur-150"
+      "pair_role": "eur-150",
+      "customer_id": "leila-benali"
     },
     {
       "id": "2124",
@@ -480,7 +511,8 @@
       "tags_on": true,
       "sku_family": "knit-dress",
       "pair_id": "dress-cap",
-      "pair_role": "eur-151"
+      "pair_role": "eur-151",
+      "customer_id": "hugo-santos"
     },
     {
       "id": "2125",
@@ -495,7 +527,8 @@
       "tags_on": true,
       "sku_family": "suede-ankle-boots",
       "pair_id": "boots-cap",
-      "pair_role": "eur-150"
+      "pair_role": "eur-150",
+      "customer_id": "freja-mller"
     },
     {
       "id": "2126",
@@ -510,7 +543,8 @@
       "tags_on": true,
       "sku_family": "suede-ankle-boots",
       "pair_id": "boots-cap",
-      "pair_role": "eur-151"
+      "pair_role": "eur-151",
+      "customer_id": "andrei-ionescu"
     },
     {
       "id": "2127",
@@ -525,7 +559,8 @@
       "tags_on": true,
       "sku_family": "wool-throw",
       "pair_id": "throw-cap",
-      "pair_role": "eur-150"
+      "pair_role": "eur-150",
+      "customer_id": "sabine-keller"
     },
     {
       "id": "2128",
@@ -540,7 +575,8 @@
       "tags_on": true,
       "sku_family": "wool-throw",
       "pair_id": "throw-cap",
-      "pair_role": "eur-151"
+      "pair_role": "eur-151",
+      "customer_id": "diego-alvarez"
     },
     {
       "id": "2129",
@@ -555,7 +591,8 @@
       "tags_on": true,
       "sku_family": "canvas-tote",
       "pair_id": "tote-tags",
-      "pair_role": "tags-on"
+      "pair_role": "tags-on",
+      "customer_id": "noor-al-farsi"
     },
     {
       "id": "2130",
@@ -570,7 +607,8 @@
       "tags_on": false,
       "sku_family": "canvas-tote",
       "pair_id": "tote-tags",
-      "pair_role": "tags-off"
+      "pair_role": "tags-off",
+      "customer_id": "camille-dupont"
     },
     {
       "id": "2131",
@@ -585,7 +623,8 @@
       "tags_on": true,
       "sku_family": "linen-trousers",
       "pair_id": "linen-trouser-tags",
-      "pair_role": "tags-on"
+      "pair_role": "tags-on",
+      "customer_id": "giulia-bianchi"
     },
     {
       "id": "2132",
@@ -600,7 +639,8 @@
       "tags_on": false,
       "sku_family": "linen-trousers",
       "pair_id": "linen-trouser-tags",
-      "pair_role": "tags-off"
+      "pair_role": "tags-off",
+      "customer_id": "henrik-solberg"
     },
     {
       "id": "2133",
@@ -615,7 +655,8 @@
       "tags_on": true,
       "sku_family": "poplin-shirt",
       "pair_id": "poplin-tags",
-      "pair_role": "tags-on"
+      "pair_role": "tags-on",
+      "customer_id": "kenji-watanabe"
     },
     {
       "id": "2134",
@@ -630,7 +671,8 @@
       "tags_on": false,
       "sku_family": "poplin-shirt",
       "pair_id": "poplin-tags",
-      "pair_role": "tags-off"
+      "pair_role": "tags-off",
+      "customer_id": "lara-petrova"
     },
     {
       "id": "2135",
@@ -645,7 +687,8 @@
       "tags_on": true,
       "sku_family": "quilted-liner",
       "pair_id": "liner-tags",
-      "pair_role": "tags-on"
+      "pair_role": "tags-on",
+      "customer_id": "ewa-kaminska"
     },
     {
       "id": "2136",
@@ -660,7 +703,8 @@
       "tags_on": false,
       "sku_family": "quilted-liner",
       "pair_id": "liner-tags",
-      "pair_role": "tags-off"
+      "pair_role": "tags-off",
+      "customer_id": "samir-osman"
     },
     {
       "id": "2137",
@@ -675,7 +719,8 @@
       "tags_on": true,
       "sku_family": "ribbed-tank",
       "pair_id": "tank-tags",
-      "pair_role": "tags-on"
+      "pair_role": "tags-on",
+      "customer_id": "aoife-ni-bhriain"
     },
     {
       "id": "2138",
@@ -690,7 +735,8 @@
       "tags_on": false,
       "sku_family": "ribbed-tank",
       "pair_id": "tank-tags",
-      "pair_role": "tags-off"
+      "pair_role": "tags-off",
+      "customer_id": "malik-traore"
     },
     {
       "id": "2139",
@@ -705,7 +751,8 @@
       "tags_on": true,
       "sku_family": "merino-crew",
       "pair_id": "merino-tags",
-      "pair_role": "tags-on"
+      "pair_role": "tags-on",
+      "customer_id": "sigrid-dahl"
     },
     {
       "id": "2140",
@@ -720,7 +767,8 @@
       "tags_on": false,
       "sku_family": "merino-crew",
       "pair_id": "merino-tags",
-      "pair_role": "tags-off"
+      "pair_role": "tags-off",
+      "customer_id": "youssef-haddad"
     },
     {
       "id": "2141",
@@ -735,7 +783,8 @@
       "tags_on": true,
       "sku_family": "chino",
       "pair_id": "chino-used",
-      "pair_role": "unused"
+      "pair_role": "unused",
+      "customer_id": "anika-sharma"
     },
     {
       "id": "2142",
@@ -750,7 +799,8 @@
       "tags_on": false,
       "sku_family": "chino",
       "pair_id": "chino-used",
-      "pair_role": "used"
+      "pair_role": "used",
+      "customer_id": "felix-bauer"
     },
     {
       "id": "2143",
@@ -765,7 +815,8 @@
       "tags_on": true,
       "sku_family": "alpaca-cardigan",
       "pair_id": "alpaca-used",
-      "pair_role": "unused"
+      "pair_role": "unused",
+      "customer_id": "rosa-delgado"
     },
     {
       "id": "2144",
@@ -780,7 +831,8 @@
       "tags_on": false,
       "sku_family": "alpaca-cardigan",
       "pair_id": "alpaca-used",
-      "pair_role": "used"
+      "pair_role": "used",
+      "customer_id": "mikael-bergstrom"
     },
     {
       "id": "2145",
@@ -795,7 +847,8 @@
       "tags_on": true,
       "sku_family": "rain-jacket",
       "pair_id": "rain-used",
-      "pair_role": "unused"
+      "pair_role": "unused",
+      "customer_id": "chloe-martin"
     },
     {
       "id": "2146",
@@ -810,7 +863,8 @@
       "tags_on": false,
       "sku_family": "rain-jacket",
       "pair_id": "rain-used",
-      "pair_role": "used"
+      "pair_role": "used",
+      "customer_id": "arjun-patel"
     },
     {
       "id": "2147",
@@ -825,7 +879,8 @@
       "tags_on": true,
       "sku_family": "canvas-slip-on",
       "pair_id": "slipon-used",
-      "pair_role": "unused"
+      "pair_role": "unused",
+      "customer_id": "nina-kovac"
     },
     {
       "id": "2148",
@@ -840,7 +895,8 @@
       "tags_on": false,
       "sku_family": "canvas-slip-on",
       "pair_id": "slipon-used",
-      "pair_role": "used"
+      "pair_role": "used",
+      "customer_id": "jamal-okonkwo"
     },
     {
       "id": "2149",
@@ -855,7 +911,8 @@
       "tags_on": true,
       "sku_family": "organic-tee",
       "pair_id": "tee-sale",
-      "pair_role": "regular"
+      "pair_role": "regular",
+      "customer_id": "helena-costa"
     },
     {
       "id": "2150",
@@ -870,7 +927,8 @@
       "tags_on": true,
       "sku_family": "outlet-tee",
       "pair_id": "tee-sale",
-      "pair_role": "sale"
+      "pair_role": "sale",
+      "customer_id": "ravi-menon"
     },
     {
       "id": "2151",
@@ -885,7 +943,8 @@
       "tags_on": true,
       "sku_family": "running-shorts",
       "pair_id": "shorts-sale",
-      "pair_role": "regular"
+      "pair_role": "regular",
+      "customer_id": "ibrahim-diallo"
     },
     {
       "id": "2152",
@@ -900,7 +959,8 @@
       "tags_on": true,
       "sku_family": "outlet-shorts",
       "pair_id": "shorts-sale",
-      "pair_role": "sale"
+      "pair_role": "sale",
+      "customer_id": "katja-nieminen"
     },
     {
       "id": "2153",
@@ -915,7 +975,8 @@
       "tags_on": true,
       "sku_family": "french-terry-hoodie",
       "pair_id": "hoodie-sale",
-      "pair_role": "regular"
+      "pair_role": "regular",
+      "customer_id": "pauline-berger"
     },
     {
       "id": "2154",
@@ -930,7 +991,8 @@
       "tags_on": true,
       "sku_family": "outlet-hoodie",
       "pair_id": "hoodie-sale",
-      "pair_role": "sale"
+      "pair_role": "sale",
+      "customer_id": "mateo-vargas"
     },
     {
       "id": "2155",
@@ -945,7 +1007,8 @@
       "tags_on": true,
       "sku_family": "merino-scarf",
       "pair_id": "scarf-sale",
-      "pair_role": "regular"
+      "pair_role": "regular",
+      "customer_id": "linnea-berg"
     },
     {
       "id": "2156",
@@ -960,7 +1023,8 @@
       "tags_on": true,
       "sku_family": "outlet-scarf",
       "pair_id": "scarf-sale",
-      "pair_role": "sale"
+      "pair_role": "sale",
+      "customer_id": "hassan-idris"
     },
     {
       "id": "2157",
@@ -975,7 +1039,8 @@
       "tags_on": true,
       "sku_family": "oxford-knit",
       "pair_id": "oxford-knit-double",
-      "pair_role": "open"
+      "pair_role": "open",
+      "customer_id": "eva-nowak"
     },
     {
       "id": "2158",
@@ -990,7 +1055,8 @@
       "tags_on": true,
       "sku_family": "oxford-knit",
       "pair_id": "oxford-knit-double",
-      "pair_role": "refunded"
+      "pair_role": "refunded",
+      "customer_id": "karim-bouzid"
     },
     {
       "id": "2159",
@@ -1005,7 +1071,8 @@
       "tags_on": true,
       "sku_family": "linen-shirt",
       "pair_id": "linen-double",
-      "pair_role": "open"
+      "pair_role": "open",
+      "customer_id": "ingrid-holm"
     },
     {
       "id": "2160",
@@ -1020,7 +1087,8 @@
       "tags_on": true,
       "sku_family": "linen-shirt",
       "pair_id": "linen-double",
-      "pair_role": "refunded"
+      "pair_role": "refunded",
+      "customer_id": "bruno-almeida"
     },
     {
       "id": "2161",
@@ -1035,7 +1103,8 @@
       "tags_on": true,
       "sku_family": "denim-skirt",
       "pair_id": "denim-skirt-double",
-      "pair_role": "open"
+      "pair_role": "open",
+      "customer_id": "sofie-larsen"
     },
     {
       "id": "2162",
@@ -1050,7 +1119,8 @@
       "tags_on": true,
       "sku_family": "denim-skirt",
       "pair_id": "denim-skirt-double",
-      "pair_role": "refunded"
+      "pair_role": "refunded",
+      "customer_id": "chen-wei"
     },
     {
       "id": "2163",
@@ -1065,7 +1135,8 @@
       "tags_on": true,
       "sku_family": "cotton-overshirt",
       "pair_id": "overshirt-double",
-      "pair_role": "open"
+      "pair_role": "open",
+      "customer_id": "marta-nowicki"
     },
     {
       "id": "2164",
@@ -1080,7 +1151,8 @@
       "tags_on": true,
       "sku_family": "cotton-overshirt",
       "pair_id": "overshirt-double",
-      "pair_role": "refunded"
+      "pair_role": "refunded",
+      "customer_id": "omar-sylla"
     },
     {
       "id": "2165",
@@ -1095,7 +1167,8 @@
       "tags_on": true,
       "sku_family": "parka",
       "pair_id": "overcap-large",
-      "pair_role": "parka"
+      "pair_role": "parka",
+      "customer_id": "erik-varga"
     },
     {
       "id": "2166",
@@ -1110,7 +1183,8 @@
       "tags_on": true,
       "sku_family": "trench",
       "pair_id": "overcap-large",
-      "pair_role": "trench"
+      "pair_role": "trench",
+      "customer_id": "nadia-rossi"
     },
     {
       "id": "2167",
@@ -1125,7 +1199,8 @@
       "tags_on": true,
       "sku_family": "down-vest",
       "pair_id": "overcap-large",
-      "pair_role": "vest"
+      "pair_role": "vest",
+      "customer_id": "joao-pereira"
     },
     {
       "id": "2168",
@@ -1140,7 +1215,8 @@
       "tags_on": true,
       "sku_family": "leather-jacket",
       "pair_id": "overcap-large",
-      "pair_role": "leather"
+      "pair_role": "leather",
+      "customer_id": "hana-novak"
     },
     {
       "id": "2169",
@@ -1155,7 +1231,8 @@
       "tags_on": true,
       "sku_family": "seersucker",
       "pair_id": "eligible-variety",
-      "pair_role": "seersucker"
+      "pair_role": "seersucker",
+      "customer_id": "alice-moreau"
     },
     {
       "id": "2170",
@@ -1170,7 +1247,8 @@
       "tags_on": true,
       "sku_family": "wrap-dress",
       "pair_id": "eligible-variety",
-      "pair_role": "wrap"
+      "pair_role": "wrap",
+      "customer_id": "dmitri-sokolov"
     },
     {
       "id": "2171",
@@ -1185,7 +1263,8 @@
       "tags_on": true,
       "sku_family": "utility-overshirt",
       "pair_id": "eligible-variety",
-      "pair_role": "utility"
+      "pair_role": "utility",
+      "customer_id": "fatima-el-idrissi"
     },
     {
       "id": "2172",
@@ -1200,7 +1279,8 @@
       "tags_on": true,
       "sku_family": "pyjama",
       "pair_id": "eligible-variety",
-      "pair_role": "pyjama"
+      "pair_role": "pyjama",
+      "customer_id": "owen-gallagher"
     }
   ]
 }

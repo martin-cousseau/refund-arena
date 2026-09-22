@@ -21,7 +21,7 @@ Service name: `backend` (`refund-arena-backend`). Database: `db`. Frontend: `fro
 | Platform agents | `agents/builder.py` etc. | AgentOS traces / Studio — not the product |
 | Evals | `evals/cases.py` | Platform smoke + `arena` tag for a clause sample |
 
-Durable state for refunds is `shop/data/ledger.json`, not a user memory store. `issue_refund` always appends a payments row. That is intentional: a production desk would lock ineligible writes; this plate must be able to fail.
+Durable state for refunds is `shop/data/ledger.json`, not a user memory store. `propose_refund` asks `shop/service.py`. A commit appends a payments row. The service does not check ownership, so an eligible row for the wrong caller can still commit. That gap is the eval.
 
 ## Local AgentOS
 
