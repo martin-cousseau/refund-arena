@@ -17,9 +17,10 @@ from typing import Any
 
 from app.settings import SIGNIN_HINT, inference_ready
 from shop.configs import ensure_configs, get_config
-from shop.runs import RESULTS_DIR, append_run
 from shop.dialogue import follow_prompt, opening_prompt
-from shop.score import Board, TicketScore, delta_rows, score_run, score_ticket, tool_calls_from_run
+from shop.live import begin, clear, publish
+from shop.runs import RESULTS_DIR, append_run
+from shop.score import Board, TicketScore, delta_rows, jsonable, score_run, score_ticket, tool_calls_from_run
 from shop.store import LEDGER_PATH, isolated_ledger, load_tickets
 
 RESULTS_PATH = RESULTS_DIR / "latest.json"
@@ -31,6 +32,32 @@ def _tag_calls(run: Any, turn: int) -> list[dict[str, Any]]:
     for call in calls:
         call["turn"] = turn
     return calls
+
+
+def _publish_turns(
+    config_id: str,
+    ticket_id: str,
+    epoch: int,
+    phase: str,
+    turns: list[dict[str, Any]],
+    calls: list[dict[str, Any]],
+) -> None:
+    publish(
+        config_id,
+        ticket_id,
+        epoch,
+        phase=phase,
+        turns=[{"turn": int(turn["turn"]), "content": str(turn.get("content") or "")} for turn in turns],
+        tool_calls=[
+            {
+                "name": call["name"],
+                "args": jsonable(call.get("args") or {}),
+                "result": jsonable(call.get("result")),
+                "turn": call.get("turn") or 1,
+            }
+            for call in calls
+        ],
+    )
 
 
 async def execute_ticket(
@@ -46,56 +73,63 @@ async def execute_ticket(
     config = get_config(key)
     if config is None:
         raise KeyError(f"unknown config {key}")
-    with isolated_ledger() as ledger:
-        before = {
-            "payments": copy.deepcopy(ledger["payments"]),
-            "escalations": copy.deepcopy(ledger["escalations"]),
-            "orders": copy.deepcopy(ledger["orders"]),
-        }
-        agent = make_helpdesk(config)
-        session_id = f"arena-{key}-{ticket['id']}-{id(ledger)}"
-        first = await agent.arun(
-            opening_prompt(ticket),
-            user_id="arena-runner",
-            session_id=session_id,
-        )
-        calls = _tag_calls(first, 1)
-        turns = [{"turn": 1, "content": str(getattr(first, "content", "") or "")}]
-        if ticket.get("follow_up"):
-            second = await agent.arun(
-                follow_prompt(ticket, turns[0]["content"], calls),
+    ticket_id = str(ticket["id"])
+    epoch = begin(key, ticket_id)
+    try:
+        with isolated_ledger() as ledger:
+            before = {
+                "payments": copy.deepcopy(ledger["payments"]),
+                "escalations": copy.deepcopy(ledger["escalations"]),
+                "orders": copy.deepcopy(ledger["orders"]),
+            }
+            agent = make_helpdesk(config)
+            session_id = f"arena-{key}-{ticket_id}-{id(ledger)}"
+            first = await agent.arun(
+                opening_prompt(ticket),
                 user_id="arena-runner",
                 session_id=session_id,
             )
-            more = _tag_calls(second, 2)
-            if len(more) >= len(calls) and more[: len(calls)] == calls:
-                more = more[len(calls) :]
-            calls.extend(more)
-            turns.append({"turn": 2, "content": str(getattr(second, "content", "") or "")})
-        after = {
-            "payments": list(ledger["payments"]),
-            "escalations": list(ledger["escalations"]),
-            "orders": list(ledger["orders"]),
-        }
-    combined = {"content": turns[-1]["content"], "tools": calls}
-    scored = score_ticket(
-        ticket,
-        combined,
-        payments_before=before["payments"],
-        payments_after=after["payments"],
-        escalations_before=before["escalations"],
-        escalations_after=after["escalations"],
-    )
-    payload = serialize_ticket_run(
-        ticket,
-        combined,
-        scored,
-        before=before,
-        after=after,
-        config_id=key,
-        turns=turns,
-    )
-    return scored, payload
+            calls = _tag_calls(first, 1)
+            turns = [{"turn": 1, "content": str(getattr(first, "content", "") or "")}]
+            _publish_turns(key, ticket_id, epoch, "turn-1", turns, calls)
+            if ticket.get("follow_up"):
+                second = await agent.arun(
+                    follow_prompt(ticket, turns[0]["content"], calls),
+                    user_id="arena-runner",
+                    session_id=session_id,
+                )
+                more = _tag_calls(second, 2)
+                if len(more) >= len(calls) and more[: len(calls)] == calls:
+                    more = more[len(calls) :]
+                calls.extend(more)
+                turns.append({"turn": 2, "content": str(getattr(second, "content", "") or "")})
+                _publish_turns(key, ticket_id, epoch, "turn-2", turns, calls)
+            after = {
+                "payments": list(ledger["payments"]),
+                "escalations": list(ledger["escalations"]),
+                "orders": list(ledger["orders"]),
+            }
+        combined = {"content": turns[-1]["content"], "tools": calls}
+        scored = score_ticket(
+            ticket,
+            combined,
+            payments_before=before["payments"],
+            payments_after=after["payments"],
+            escalations_before=before["escalations"],
+            escalations_after=after["escalations"],
+        )
+        payload = serialize_ticket_run(
+            ticket,
+            combined,
+            scored,
+            before=before,
+            after=after,
+            config_id=key,
+            turns=turns,
+        )
+        return scored, payload
+    finally:
+        clear(key, ticket_id)
 
 
 async def run_ticket(

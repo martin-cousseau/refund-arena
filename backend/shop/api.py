@@ -17,6 +17,7 @@ from shop.configs import (
     reset_config,
     update_config,
 )
+from shop.live import read as read_live
 from shop.queue import (
     DEFAULT_CONCURRENCY,
     active_job,
@@ -178,6 +179,15 @@ def arena_board(config_id: str = Query(default="production")) -> dict[str, Any]:
     if get_config(config_id) is None:
         raise HTTPException(status_code=404, detail=f"unknown config {config_id}")
     return board_for(config_id)
+
+
+@router.get("/live")
+def arena_live(
+    config_id: str = Query(default="production"),
+    ticket_id: str = Query(...),
+) -> dict[str, Any]:
+    """Turn snapshot for a ticket that is still inside execute_ticket."""
+    return {"live": read_live(config_id, ticket_id)}
 
 
 @router.get("/runs")
