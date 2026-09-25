@@ -7,12 +7,34 @@ import { TicketTags } from "@/components/desk/ticket-tags"
 import { Transcript } from "@/components/desk/transcript"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { ResultTag } from "@/components/ui/tag"
 import { fetchLive } from "@/lib/api"
 import { CLAUSE_BLURB } from "@/lib/clauses"
 import { boundOrderId } from "@/lib/orders"
-import { resultFromScore } from "@/lib/result"
+import { promptVersionLabel, recordedAttempt, resultFromScore } from "@/lib/result"
 import type { LiveSnapshot, Order, Ticket, TicketRun } from "@/lib/types"
 import { cn } from "cn"
+
+function versionKey(row: TicketRun): string {
+  return `${row.run_id ?? ""}:${row.attempt ?? ""}:${row.created_at ?? ""}:${row.model ?? ""}`
+}
+
+function runStamp(run: TicketRun): string {
+  return [
+    run.model,
+    run.prompt_version ? `prompt ${promptVersionLabel(run.prompt_version.version)}` : null,
+    run.attempt ? `attempt ${run.attempt}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ")
+}
+
+function shortWhen(iso?: string): string {
+  if (!iso) return "—"
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return date.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+}
 
 export function TicketWorkspace({
   ticket,
@@ -88,6 +110,7 @@ export function TicketWorkspace({
                   row.source === "commit" || row.source === "issue_refund"
               )}
               configId={run.config_id}
+              stamp={runStamp(run)}
             />
           ) : null}
           <Transcript
@@ -110,6 +133,8 @@ export function TicketProperties({
   trapIds,
   windowDays,
   cap,
+  versions,
+  onSelectVersion,
 }: {
   ticket: Ticket
   run: TicketRun | null
@@ -117,6 +142,8 @@ export function TicketProperties({
   trapIds: Set<string>
   windowDays: number
   cap: number
+  versions: TicketRun[] | null
+  onSelectVersion: (run: TicketRun) => void
 }) {
   const orderId = boundOrderId(ticket)
   const order = orders.find((row) => row.id === orderId)
@@ -139,10 +166,52 @@ export function TicketProperties({
             />
           </section>
         ) : (
-          <p className="text-[12px] text-muted-foreground">
-            No bound order. Info tickets may not name a row.
-          </p>
+          <p className="text-[12px] text-muted-foreground">This case has no order id on the gold label.</p>
         )}
+        <section>
+          <h3 className="mb-1.5 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+            Versions
+          </h3>
+          <p className="mb-2 text-[12px] text-muted-foreground">
+            Saved attempts for this case. Choosing one changes the transcript. The board still scores the latest attempt.
+          </p>
+          <p className="mb-2 truncate font-mono text-[10px] text-muted-foreground" title="martincousseau/refund-arena">
+            martincousseau/refund-arena · {ticket.id}
+          </p>
+          {versions == null ? (
+            <p className="text-[12px] text-muted-foreground">Loading saved runs.</p>
+          ) : versions.length === 0 ? (
+            <p className="text-[12px] text-muted-foreground">No saved runs for this ticket.</p>
+          ) : (
+            <ul className="flex flex-col gap-1">
+              {versions.map((row) => {
+                const active = run ? versionKey(row) === versionKey(run) : false
+                return (
+                  <li key={versionKey(row)}>
+                    <button
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => onSelectVersion(row)}
+                      className={cn(
+                        "flex w-full flex-col gap-0.5 rounded-md border px-2 py-1.5 text-left",
+                        active ? "border-foreground/25 bg-muted" : "border-transparent hover:bg-muted/70"
+                      )}
+                    >
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="truncate font-mono text-[11px]">{row.model ?? "—"}</span>
+                        <ResultTag kind={recordedAttempt(row) ? resultFromScore(row.score) : "unrun"} />
+                      </span>
+                      <span className="font-mono text-[10px] text-muted-foreground">
+                        {promptVersionLabel(row.prompt_version?.version)} · attempt {row.attempt ?? "—"} ·{" "}
+                        {shortWhen(row.created_at)}
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
         <section>
           <h3 className="mb-1.5 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
             Clause
@@ -153,8 +222,9 @@ export function TicketProperties({
         </section>
         <section>
           <h3 className="mb-1.5 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-            Meta
+            How the case was written
           </h3>
+          <p className="mb-1.5 text-[12px] text-muted-foreground">These fields do not change the gold label.</p>
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 font-mono text-[11px]">
             <dt className="text-muted-foreground">style</dt>
             <dd>{ticket.style ?? "—"}</dd>
@@ -162,6 +232,10 @@ export function TicketProperties({
             <dd>{ticket.attack ?? "—"}</dd>
             <dt className="text-muted-foreground">source</dt>
             <dd className="truncate">{ticket.source ?? "—"}</dd>
+            <dt className="text-muted-foreground">item hash</dt>
+            <dd className="truncate" title={run?.dataset?.content_hash}>
+              {run?.dataset?.content_hash ? run.dataset.content_hash.slice(0, 12) : "—"}
+            </dd>
           </dl>
         </section>
       </div>

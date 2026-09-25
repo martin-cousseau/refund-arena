@@ -22,11 +22,11 @@ import { Label } from "@/components/ui/label"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useMediaQuery } from "@/hooks/use-media-query"
-import { runTicket } from "@/lib/api"
+import { fetchRunHistory, runTicket } from "@/lib/api"
 import { useArena } from "@/lib/arena-context"
 import { CLAUSES } from "@/lib/clauses"
 import { resultFromScore, type ResultKind } from "@/lib/result"
-import type { Ticket } from "@/lib/types"
+import type { Ticket, TicketRun } from "@/lib/types"
 
 function rank(kind: ResultKind): number {
   if (kind === "gate") return 0
@@ -53,6 +53,7 @@ export function QueuePage() {
     setRun,
     setError,
     loading,
+    queueing,
     queueJob,
   } = useArena()
 
@@ -61,6 +62,13 @@ export function QueuePage() {
   const [concurrency, setConcurrency] = useState(4)
   const [confirmAll, setConfirmAll] = useState(false)
   const [runningId, setRunningId] = useState<string | null>(null)
+  const [historyState, setHistoryState] = useState<{
+    scope: string
+    rows: TicketRun[]
+  } | null>(null)
+  const [picked, setPicked] = useState<TicketRun | null>(null)
+  const [pickedScope, setPickedScope] = useState<string | null>(null)
+  const [historyTick, setHistoryTick] = useState(0)
   const searchRef = useRef<HTMLInputElement>(null)
 
   const clause =
@@ -75,6 +83,20 @@ export function QueuePage() {
 
   const tickets = useMemo(() => world?.tickets ?? [], [world])
   const trapIds = useMemo(() => new Set(world?.trap_order_ids ?? []), [world])
+  const unrunCount = useMemo(() => {
+    return tickets.filter((row) => {
+      const jobItem = job?.items.find((item) => item.ticket_id === row.id)
+      if (jobItem && (jobItem.status === "queued" || jobItem.status === "running")) {
+        return false
+      }
+      const persisted =
+        runsByTicket[row.id] ??
+        board.runs?.find((item) => item.ticket_id === row.id)
+      const score = persisted && "score" in persisted ? persisted.score : null
+      return resultFromScore(score) === "unrun"
+    }).length
+  }, [board.runs, job, runsByTicket, tickets])
+  const randomCount = Math.min(sample, unrunCount)
 
   const setFilter = useCallback(
     (key: string, value: string | null) => {
@@ -160,6 +182,25 @@ export function QueuePage() {
   const selected: Ticket | null =
     tickets.find((row) => row.id === selectedId) ?? null
   const selectedRun = selected ? (runsByTicket[selected.id] ?? null) : null
+  const historyScope = selectedId ? `${configId}:${selectedId}` : ""
+  const history = historyState?.scope === historyScope ? historyState.rows : null
+  const activePick = pickedScope === historyScope ? picked : null
+
+  useEffect(() => {
+    if (!selectedId) return
+    const scope = `${configId}:${selectedId}`
+    let cancelled = false
+    void fetchRunHistory(configId, selectedId)
+      .then((rows) => {
+        if (!cancelled) setHistoryState({ scope, rows })
+      })
+      .catch(() => {
+        if (!cancelled) setHistoryState({ scope, rows: [] })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [configId, historyTick, selectedId])
   const selectedItem = selected
     ? job?.items.find((item) => item.ticket_id === selected.id)
     : undefined
@@ -171,17 +212,19 @@ export function QueuePage() {
         ? "queued"
         : null
   const inProgress = selectedPhase != null
-  const shownRun = inProgress ? null : selectedRun
+  const shownRun = inProgress ? null : (activePick ?? selectedRun)
   const pendingNote =
     selectedPhase === "queued"
       ? "Waiting in the queue."
-      : "Desk is on this turn."
-  const jobActive = Boolean(
-    job &&
-    (job.status === "queued" ||
-      job.status === "running" ||
-      job.status === "cancelling")
-  )
+      : "SuperGrok is triaging this case."
+  const jobActive =
+    queueing ||
+    Boolean(
+      job &&
+      (job.status === "queued" ||
+        job.status === "running" ||
+        job.status === "cancelling")
+    )
 
   const selectTicket = useCallback(
     (id: string) => {
@@ -196,8 +239,11 @@ export function QueuePage() {
       setRunningId(id)
       try {
         const payload = await runTicket(id, configId)
+        setPicked(null)
+        setPickedScope(null)
         setRun(payload)
         if (payload.board) setBoard(payload.board)
+        setHistoryTick((tick) => tick + 1)
       } catch (err) {
         setError(err instanceof Error ? err.message : `Run ${id} failed.`)
       } finally {
@@ -313,38 +359,38 @@ export function QueuePage() {
         <Button
           size="sm"
           className="min-w-0 flex-1"
-          disabled={jobActive}
+          disabled={jobActive || randomCount < 1}
           onClick={() =>
-            void queueJob({ sample, concurrency }).catch((err: unknown) =>
-              setError(
-                err instanceof Error ? err.message : "Could not queue the run."
-              )
+            void queueJob({ sample: randomCount, concurrency }).catch(
+              (err: unknown) =>
+                setError(
+                  err instanceof Error ? err.message : "Could not queue the run."
+                )
             )
           }
         >
-          Run {sample} random
+          Run {randomCount} random
         </Button>
         <Button
           size="sm"
           variant="outline"
           className="shrink-0"
-          disabled={jobActive}
+          disabled={jobActive || unrunCount < 1}
           onClick={() => setConfirmAll(true)}
         >
           Run all
         </Button>
       </div>
       <p className="text-[11px] text-muted-foreground">
-        {listed.length} of {tickets.length}
-        {orderFilter ? ` · order ${orderFilter}` : ""} · j/k move · enter run ·
-        f review
+        {listed.length} of {tickets.length} shown. {unrunCount} have no saved run
+        {orderFilter ? ` on order ${orderFilter}` : ""}. j and k move. Enter runs the open case. f toggles needs review. / focuses search.
       </p>
       <TicketList
         rows={listed}
         selectedId={selectedId}
         onSelect={selectTicket}
         pulseGate={
-          jobActive && (board.gate_fail === 1 || board.forbidden_write === 1)
+          jobActive && (board.gate_fail ?? board.forbidden_write) > 0
         }
       />
     </div>
@@ -369,6 +415,11 @@ export function QueuePage() {
           trapIds={trapIds}
           windowDays={world.refund_window_days}
           cap={world.amount_cap_eur}
+          versions={history}
+          onSelectVersion={(row) => {
+            setPicked(row)
+            setPickedScope(historyScope)
+          }}
         />
       </div>
     </>
@@ -380,7 +431,13 @@ export function QueuePage() {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
-      {job ? <JobStrip job={job} onJob={setJob} /> : null}
+      <div>
+        <h1 className="text-lg font-medium tracking-tight">Queue</h1>
+        <p className="max-w-3xl text-[13px] text-muted-foreground">
+          One row is one case. Run sends it to SuperGrok for triage, then Resolvd decides the payment. Run all and Run random skip cases that already have a saved run on this config. Run ticket runs that case again.
+        </p>
+      </div>
+      <JobStrip job={job} queueing={queueing} onJob={setJob} />
       <div className="flex min-h-0 flex-1 gap-3">
         {listPane}
         {desktop ? detail : null}
@@ -416,6 +473,11 @@ export function QueuePage() {
                 trapIds={trapIds}
                 windowDays={world.refund_window_days}
                 cap={world.amount_cap_eur}
+                versions={history}
+                onSelectVersion={(row) => {
+                  setPicked(row)
+                  setPickedScope(historyScope)
+                }}
               />
             </div>
           </SheetContent>
@@ -425,17 +487,18 @@ export function QueuePage() {
       <Dialog open={confirmAll} onOpenChange={setConfirmAll}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Run all {tickets.length} tickets</DialogTitle>
+            <DialogTitle>Run {unrunCount} unrun tickets</DialogTitle>
             <DialogDescription>
-              Queues every ticket under {configId} with {concurrency} parallel
-              workers. Each call hits the model.
+              Queues every ticket under {configId} that has no saved run, with{" "}
+              {concurrency} parallel workers. Each call hits the model.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmAll(false)}>
+            <Button type="button" variant="outline" onClick={() => setConfirmAll(false)}>
               Cancel
             </Button>
             <Button
+              type="button"
               onClick={() => {
                 setConfirmAll(false)
                 void queueJob({ all: true, concurrency }).catch(

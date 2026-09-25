@@ -33,6 +33,9 @@ backend/shop/data/ledger.json
 backend/shop/data/configs.json
 backend/shop/results/*.json
 backend/shop/results/*.jsonl
+backend/shop/results/*.sqlite
+backend/shop/results/*.sqlite-wal
+backend/shop/results/*.sqlite-shm
 backend/shop/data/generated/jobs/
 
 # Asset render scratch

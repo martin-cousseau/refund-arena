@@ -15,7 +15,6 @@ from fastapi import FastAPI
 from agents.builder import platform_builder
 from agents.engineer import platform_engineer
 from agents.manager import platform_manager
-from agents.refund_helpdesk import refund_helpdesk
 from app.knowledge import product_knowledge, shared_knowledge
 from app.registry import registry
 from app.schedules import register_schedules
@@ -135,7 +134,7 @@ agent_os = AgentOS(
     lifespan=lifespan,
     db=get_postgres_db(),
     knowledge=[shared_knowledge, product_knowledge],
-    agents=[refund_helpdesk, platform_builder, platform_manager, platform_engineer],
+    agents=[platform_builder, platform_manager, platform_engineer],
     teams=[agno_team],
     workflows=[deployment_check, run_evals],
     interfaces=interfaces,

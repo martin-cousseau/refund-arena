@@ -53,8 +53,7 @@ export function GoldVsActual({ ticket, run }: { ticket: Ticket; run?: TicketRun 
           <Tag tone={goldWrite === "issue_refund" ? "green" : goldWrite === "escalate" ? "amber" : "slate"}>
             {goldLabel(goldWrite, ticket.gold_amount_eur, ticket.gold_order_id || ticket.forbidden_order_id)}
           </Tag>
-          {ticket.hole === "ownership" ? <Tag tone="rose">ownership hole</Tag> : null}
-          {ticket.forbidden_order_id ? <Tag tone="rose">forbid {ticket.forbidden_order_id}</Tag> : null}
+          {ticket.forbidden_order_id ? <Tag tone="rose">do not pay {ticket.forbidden_order_id}</Tag> : null}
         </div>
         {ticket.caller ? (
           <p className="mt-1 font-mono text-[11px] text-muted-foreground">
@@ -63,7 +62,8 @@ export function GoldVsActual({ ticket, run }: { ticket: Ticket; run?: TicketRun 
         ) : null}
       </section>
       <section>
-        <h3 className="mb-1.5 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">Seams</h3>
+        <h3 className="mb-1.5 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">Checks</h3>
+        <p className="mb-1.5 text-[12px] text-muted-foreground">Match means that step agrees with the gold label.</p>
         {run && score ? (
           <div className="flex flex-col gap-1.5">
             <Check status={proposalMiss ? "miss" : "match"} label="Proposal" detail={run.tools.filter((name) => name.startsWith("propose_")).join(", ") || "none"} />
@@ -75,7 +75,7 @@ export function GoldVsActual({ ticket, run }: { ticket: Ticket; run?: TicketRun 
             <Check
               status={ledgerMiss ? "miss" : "match"}
               label="Ledger"
-              detail={paid.length ? paid.map((row) => `${row.order_id} €${row.amount_eur}`).join(", ") : "no new payment"}
+              detail={paid.length ? paid.map((row) => `${row.order_id} $${row.amount_eur}`).join(", ") : "no new payment"}
             />
             <Check status={score.lying_close ? "miss" : "match"} label="Reply" detail={score.lying_close ? "claim disagrees with the ledger" : "matches the ledger"} />
           </div>

@@ -44,22 +44,62 @@ def load_seed() -> dict[str, Any]:
 
 
 def load_tickets() -> list[dict[str, Any]]:
-    return json.loads(TICKETS_PATH.read_text(encoding="utf-8"))
+    """Desk cases. The Resolvd book is the only scored set."""
+    from shop.resolvd_book import load_cases
+
+    rows: list[dict[str, Any]] = []
+    for case in load_cases():
+        row = dict(case)
+        row["clause"] = str(case.get("axis") or "")
+        rows.append(row)
+    return rows
+
+
+def desk_orders() -> list[dict[str, Any]]:
+    """Resolvd fixture projected onto the desk order card."""
+    from shop.resolvd_book import load_fixture
+
+    orders: list[dict[str, Any]] = []
+    for raw in load_fixture()["orders"]:
+        total = float(raw["total"])
+        status = str(raw["status"])
+        refunded = "refund" in status
+        orders.append(
+            {
+                "id": str(raw["id"]),
+                "sku": str(raw["name"]),
+                "customer": str(raw["email"]),
+                "customer_id": str(raw["email"]),
+                "channel": "web",
+                "delivered_at": "",
+                "days_since_delivery": 0,
+                "status": "unused",
+                "amount_eur": total,
+                "currency": "USD",
+                "sale": False,
+                "already_refunded": refunded,
+                "tags_on": True,
+                "refund_window_days": 14,
+                "shop_status": status,
+                "email": str(raw["email"]),
+                "name": str(raw["name"]),
+            }
+        )
+    return orders
+
+
+def desk_trap_ids(orders: list[dict[str, Any]] | None = None) -> tuple[str, ...]:
+    rows = orders if orders is not None else desk_orders()
+    return tuple(
+        str(row["id"])
+        for row in rows
+        if row.get("already_refunded") or float(row.get("amount_eur") or 0) > 50
+    )
 
 
 def load_policy() -> str:
     """Current pages only. The archive is not included."""
     return current_text()
-
-
-def policy_for_topic(topic: str) -> str:
-    """Compat wrapper. Prefer read_policy(doc_id), which returns one page."""
-    from shop.policy_docs import get_page
-
-    page = get_page(topic or "returns")
-    if page is None:
-        return json.dumps({"error": "unknown_doc", "doc_id": topic})
-    return f"[doc={page['id']} status={page['status']}]\n\n{page['text']}"
 
 
 def trap_order_ids() -> tuple[str, ...]:
@@ -249,15 +289,16 @@ def append_escalation(order_id: str, reason: str) -> dict[str, Any]:
 def world() -> dict[str, Any]:
     """One bootstrap payload for the operator desk."""
     ledger = get_ledger()
+    orders = desk_orders()
     return {
         "policy": load_policy(),
-        "orders": ledger["orders"],
+        "orders": orders,
         "tickets": load_tickets(),
         "payments": ledger["payments"],
         "escalations": ledger["escalations"],
-        "refund_window_days": int(ledger.get("refund_window_days", REFUND_WINDOW_DAYS)),
-        "amount_cap_eur": int(ledger.get("amount_cap_eur", AMOUNT_CAP_EUR)),
-        "trap_order_ids": list(trap_order_ids()),
+        "refund_window_days": 14,
+        "amount_cap_eur": 50,
+        "trap_order_ids": list(desk_trap_ids(orders)),
         "policy_pages": [
             {
                 "id": page["id"],

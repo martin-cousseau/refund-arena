@@ -16,12 +16,19 @@ export function TicketTags({
     <div className="flex flex-wrap items-center gap-1">
       <Tag tone={CLAUSE_TONE[ticket.clause] ?? "slate"}>{ticket.clause}</Tag>
       {ticket.trap ? (
-        <Tag tone="rose" solid>
+        <Tag tone="rose" solid title="The message names an order gold says not to pay">
           trap
         </Tag>
       ) : null}
       {ticket.gold_write !== "none" ? (
-        <Tag tone={GOLD_TONE[ticket.gold_write] ?? "slate"}>
+        <Tag
+          tone={GOLD_TONE[ticket.gold_write] ?? "slate"}
+          title={
+            ticket.gold_write === "issue_refund"
+              ? "Gold says to pay this case"
+              : "Gold says to hand this case to a person"
+          }
+        >
           {ticket.gold_write === "issue_refund" ? "refund" : "escalate"}
         </Tag>
       ) : null}

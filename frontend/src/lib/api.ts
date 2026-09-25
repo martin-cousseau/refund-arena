@@ -100,6 +100,17 @@ export async function fetchRuns(configId: string): Promise<TicketRun[]> {
   }))
 }
 
+export async function fetchRunHistory(configId: string, ticketId: string): Promise<TicketRun[]> {
+  const payload = await getJson<{ config_id: string; ticket_id: string; runs: TicketRun[] }>(
+    `/arena/runs/history?config_id=${encodeURIComponent(configId)}&ticket_id=${encodeURIComponent(ticketId)}`,
+    "Load run history"
+  )
+  return payload.runs.map((row) => ({
+    ...row,
+    score: normalizeScore(row.score),
+  }))
+}
+
 export async function fetchLive(
   ticketId: string,
   configId: string
@@ -155,6 +166,14 @@ export async function fetchJob(jobId: string): Promise<ArenaJob> {
   return readJson<ArenaJob>(await fetch(`/arena/jobs/${jobId}`), "Job")
 }
 
+export async function fetchActiveJob(): Promise<ArenaJob | null> {
+  const payload = await readJson<{ active?: ArenaJob | null }>(
+    await fetch("/arena/jobs"),
+    "Jobs"
+  )
+  return payload.active ?? null
+}
+
 export async function cancelJob(jobId: string): Promise<ArenaJob> {
   const res = await fetch(`/arena/jobs/${jobId}/cancel`, { method: "POST" })
   return readJson<ArenaJob>(res, "Cancel job")
@@ -175,7 +194,7 @@ export async function createConfig(body: {
 
 export async function updateConfig(
   id: string,
-  body: { name?: string; instructions?: string }
+  body: { name?: string; instructions?: string; refund_auto_limit?: number }
 ): Promise<PromptConfig> {
   const res = await fetch(`/arena/configs/${encodeURIComponent(id)}`, {
     method: "PUT",

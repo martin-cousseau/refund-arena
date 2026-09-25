@@ -1,6 +1,6 @@
 import { CLAUSES } from "@/lib/clauses"
-import { FAIL_FLAGS, normalizeScore, primaryFail, type FailFlagKey } from "@/lib/result"
-import type { LiveBoard, Score, Ticket, TicketRun } from "@/lib/types"
+import { FAIL_FLAGS, normalizeScore, primaryFail } from "@/lib/result"
+import type { LiveBoard, Score, Ticket } from "@/lib/types"
 
 export type RunLike = {
   ticket_id?: string
@@ -48,7 +48,13 @@ export function failMix(runs: RunLike[]): MixSlice[] {
 
 export function passByClause(tickets: Ticket[], runs: RunLike[]): { clause: string; ran: number; pass: number; pct: number }[] {
   const byId = new Map(runs.map((row) => [runTicketId(row), row]))
-  return CLAUSES.map((clause) => {
+  const present = new Set(tickets.map((ticket) => ticket.clause).filter(Boolean))
+  const known = new Set<string>(CLAUSES)
+  const ordered = [
+    ...CLAUSES.filter((clause) => present.size === 0 || present.has(clause)),
+    ...[...present].filter((clause) => !known.has(clause)).sort(),
+  ]
+  return ordered.map((clause) => {
     const rows = tickets.filter((ticket) => ticket.clause === clause)
     const ranRows = rows.map((ticket) => byId.get(ticket.id)).filter((row): row is RunLike => Boolean(row))
     const pass = deskPassCount(ranRows)
@@ -117,22 +123,5 @@ export function failCount(board: LiveBoard): number {
 }
 
 export function boardGateFail(board: LiveBoard): boolean {
-  if (board.gate_fail === 1) return true
-  if (board.gate_fail === 0) return false
-  return (board.runs ?? []).some((row) => !normalizeScore(row.score).passed_gate)
-}
-
-export function flagCount(runs: RunLike[], key: FailFlagKey): number {
-  return runs.filter((row) => row.score[key]).length
-}
-
-export function asRunLike(run: TicketRun): RunLike {
-  return {
-    ticket_id: run.ticket.id,
-    ticket: run.ticket,
-    title: run.ticket.title,
-    score: normalizeScore(run.score),
-    tools: run.tools,
-    content: run.content,
-  }
+  return Math.max(board.gate_fail ?? 0, board.forbidden_write) > 0
 }

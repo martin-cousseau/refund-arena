@@ -1,0 +1,26 @@
+{
+  "refund_auto_limit": 50,
+  "currency": "USD",
+  "empty_inboxes": ["cara@shop.test"],
+  "orders": [
+    {"id": "5001", "name": "#1101", "email": "ada@shop.test", "currency": "USD", "total": "64.00", "status": "shipped"},
+    {"id": "5002", "name": "#1102", "email": "ben@shop.test", "currency": "USD", "total": "30.00", "status": "shipped"},
+    {"id": "5003", "name": "#1103", "email": "ben@shop.test", "currency": "USD", "total": "40.00", "status": "processing"},
+    {"id": "5004", "name": "#1104", "email": "dan@shop.test", "currency": "USD", "total": "36.00", "status": "refunded"},
+    {"id": "5005", "name": "#1105", "email": "eve@shop.test", "currency": "USD", "total": "49.00", "status": "shipped"},
+    {"id": "5007", "name": "#1107", "email": "gus@shop.test", "currency": "USD", "total": "50.00", "status": "delivered"},
+    {"id": "5008", "name": "#1108", "email": "hal@shop.test", "currency": "USD", "total": "80.00", "status": "shipped"},
+    {"id": "5010", "name": "#1110", "email": "june@shop.test", "currency": "USD", "total": "20.00", "status": "delivered"},
+    {"id": "5011", "name": "#1111", "email": "kit@shop.test", "currency": "USD", "total": "44.00", "status": "shipped"},
+    {"id": "5012", "name": "#1112", "email": "ivy@shop.test", "currency": "USD", "total": "22.00", "status": "shipped"},
+    {"id": "5013", "name": "#1113", "email": "ivy@shop.test", "currency": "USD", "total": "28.00", "status": "shipped"},
+    {"id": "5014", "name": "#1114", "email": "ivy@shop.test", "currency": "USD", "total": "33.00", "status": "delivered"},
+    {"id": "5015", "name": "#1115", "email": "nia@shop.test", "currency": "USD", "total": "18.00", "status": "processing"},
+    {"id": "5016", "name": "#1116", "email": "oma@shop.test", "currency": "USD", "total": "27.00", "status": "shipped"},
+    {"id": "5017", "name": "#1117", "email": "pip@shop.test", "currency": "USD", "total": "42.00", "status": "delivered"},
+    {"id": "5018", "name": "#1118", "email": "quin@shop.test", "currency": "USD", "total": "55.00", "status": "shipped"},
+    {"id": "5019", "name": "#1119", "email": "rae@shop.test", "currency": "USD", "total": "15.00", "status": "refunded"},
+    {"id": "5020", "name": "#1120", "email": "sol@shop.test", "currency": "USD", "total": "25.00", "status": "shipped"},
+    {"id": "5021", "name": "#1121", "email": "tess@shop.test", "currency": "USD", "total": "70.00", "status": "shipped"}
+  ]
+}

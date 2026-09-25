@@ -9,9 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ResultTag, Tag } from "@/components/ui/tag"
 import { resetRuns } from "@/lib/api"
 import { useArena } from "@/lib/arena-context"
-import { CLAUSE_TONE, goldLabel } from "@/lib/clauses"
+import { goldLabel } from "@/lib/clauses"
 import { failRowClass } from "@/lib/fail-row"
-import { FAIL_FLAGS, GATE_FLAG_KEYS, activeFlags, resultFromScore, type FailFlagKey } from "@/lib/result"
+import { FAIL_FLAGS, GATE_FLAG_KEYS, activeFlags, promptVersionLabel, resultFromScore, type FailFlagKey } from "@/lib/result"
 import { cn } from "cn"
 
 export function RunsPage() {
@@ -50,8 +50,8 @@ export function RunsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-lg font-medium tracking-tight">Runs</h1>
-          <p className="text-[13px] text-muted-foreground">
-            {config?.name ?? configId} · latest run per ticket · fails sort first
+          <p className="max-w-3xl text-[13px] text-muted-foreground">
+            Latest saved attempt for each ticket on {config?.name ?? configId}. Gate fails sort first. Click a row to open the case. Reset deletes saved runs for this config only.
           </p>
         </div>
         <Button size="sm" variant="outline" onClick={() => setConfirm(true)}>
@@ -67,8 +67,8 @@ export function RunsPage() {
           gate {board.gate_fail ?? board.forbidden_write}
         </span>
         <span className="font-mono text-[12px] tabular-nums text-muted-foreground">missed-refund {board.missed_refund}</span>
-        <span className="font-mono text-[12px] tabular-nums text-muted-foreground">missed-esc {board.missed_escalate}</span>
-        <span className="font-mono text-[12px] tabular-nums text-muted-foreground">wrong-amt {board.wrong_amount}</span>
+        <span className="font-mono text-[12px] tabular-nums text-muted-foreground">missed-escalate {board.missed_escalate}</span>
+        <span className="font-mono text-[12px] tabular-nums text-muted-foreground">wrong-amount {board.wrong_amount}</span>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -108,7 +108,7 @@ export function RunsPage() {
 
       <div className="min-h-0 flex-1 overflow-auto rounded-xl border bg-card">
         {rows.length === 0 ? (
-          <p className="p-6 text-sm text-muted-foreground">No persisted runs yet. Queue tickets from Overview or Queue.</p>
+          <p className="p-6 text-sm text-muted-foreground">No saved runs yet. Queue cases from Overview or Queue.</p>
         ) : (
           <Table>
             <TableHeader className="sticky top-0 bg-card">
@@ -118,6 +118,8 @@ export function RunsPage() {
                 <TableHead>Title</TableHead>
                 <TableHead>Clause</TableHead>
                 <TableHead>Gold</TableHead>
+                <TableHead>Model</TableHead>
+                <TableHead>Prompt</TableHead>
                 <TableHead>Tools</TableHead>
                 <TableHead>Reason</TableHead>
                 <TableHead>Flags</TableHead>
@@ -136,11 +138,15 @@ export function RunsPage() {
                   <TableCell className="font-mono">{row.ticket_id}</TableCell>
                   <TableCell className="max-w-[220px] truncate">{row.title}</TableCell>
                   <TableCell>
-                    {ticket ? <TicketTags ticket={ticket} /> : <Tag tone={CLAUSE_TONE.info}>—</Tag>}
+                    {ticket ? <TicketTags ticket={ticket} /> : <Tag tone="slate">—</Tag>}
                   </TableCell>
                   <TableCell className="font-mono text-[11px]">
                     {ticket ? goldLabel(ticket.gold_write, ticket.gold_amount_eur, ticket.gold_order_id) : "—"}
                   </TableCell>
+                  <TableCell className="max-w-[140px] truncate font-mono text-[11px]" title={row.model}>
+                    {row.model ?? "—"}
+                  </TableCell>
+                  <TableCell className="font-mono text-[11px]">{promptVersionLabel(row.prompt_version)}</TableCell>
                   <TableCell>
                     <div className="flex max-w-[180px] flex-wrap gap-0.5">
                       {row.tools.map((tool, index) => (
@@ -173,7 +179,9 @@ export function RunsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reset runs for {config?.name ?? configId}</DialogTitle>
-            <DialogDescription>Drops persisted scores for this config only. Other configs stay.</DialogDescription>
+            <DialogDescription>
+              Deletes saved runs for this config. Prompt versions stay. Other configs stay.
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirm(false)}>

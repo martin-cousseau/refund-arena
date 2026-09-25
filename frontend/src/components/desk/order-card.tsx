@@ -1,6 +1,6 @@
 import { Tag } from "@/components/ui/tag"
 import { CLAUSE_TONE } from "@/lib/clauses"
-import { isMustPay, orderFlags } from "@/lib/orders"
+import { catalogMark, moneyLabel, orderFlags } from "@/lib/orders"
 import type { Order } from "@/lib/types"
 import { cn } from "cn"
 
@@ -20,8 +20,10 @@ export function OrderCard({
   onClick?: () => void
 }) {
   const trap = trapIds.has(order.id)
-  const must = isMustPay(order, trapIds, windowDays, cap)
-  const flags = orderFlags(order, trapIds, windowDays, cap).filter((flag) => flag !== "payable" && flag !== "ineligible")
+  const mark = catalogMark(order, trapIds, windowDays, cap)
+  const flags = orderFlags(order, windowDays, cap).filter(
+    (flag) => flag !== "payable" && flag !== "ineligible" && flag !== "refunded" && flag !== "cap"
+  )
   const windowPct = Math.min(100, Math.round((100 * order.days_since_delivery) / Math.max(1, windowDays)))
   const overWindow = order.days_since_delivery > windowDays
 
@@ -36,47 +38,46 @@ export function OrderCard({
             {order.customer_id ? ` · ${order.customer_id}` : ""}
           </p>
         </div>
-        <p className="font-mono text-sm tabular-nums">€{order.amount_eur}</p>
+        <p className="font-mono text-sm tabular-nums">{moneyLabel(order.amount_eur, order.currency)}</p>
       </div>
       <div className="mt-3 flex flex-wrap gap-1">
-        {must ? (
-          <Tag tone="green" solid>
-            MUST PAY
-          </Tag>
-        ) : trap ? (
-          <Tag tone="rose" solid>
-            TRAP
-          </Tag>
-        ) : (
-          <Tag tone="slate">order</Tag>
-        )}
+        <Tag tone={mark.tone} solid={mark.tone !== "slate"} title={mark.title}>
+          {mark.label}
+        </Tag>
         {flags.map((flag) => (
           <Tag key={flag} tone={CLAUSE_TONE[flag] ?? "slate"}>
             {flag}
           </Tag>
         ))}
       </div>
-      <div className="mt-3">
-        <div className="mb-1 flex justify-between font-mono text-[11px] text-muted-foreground">
-          <span>
-            {order.days_since_delivery}d / {windowDays}d window
-          </span>
-          <span>cap €{cap}</span>
+      {mark.label !== "MUST PAY" ? (
+        <p className="mt-2 text-[12px] leading-snug text-muted-foreground">{mark.title}</p>
+      ) : null}
+      {order.shop_status ? (
+        <p className="mt-3 font-mono text-[11px] text-muted-foreground">{order.shop_status}</p>
+      ) : (
+        <div className="mt-3">
+          <div className="mb-1 flex justify-between font-mono text-[11px] text-muted-foreground">
+            <span>
+              {order.days_since_delivery}d / {windowDays}d window
+            </span>
+            <span>cap {moneyLabel(cap, order.currency)}</span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+            <div
+              className={cn("h-full rounded-full", overWindow ? "bg-tag-rose" : "bg-tag-green")}
+              style={{ width: `${Math.min(100, overWindow ? 100 : windowPct)}%` }}
+            />
+          </div>
         </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-          <div
-            className={cn("h-full rounded-full", overWindow ? "bg-tag-rose" : "bg-tag-green")}
-            style={{ width: `${Math.min(100, overWindow ? 100 : windowPct)}%` }}
-          />
-        </div>
-      </div>
+      )}
     </>
   )
 
   const className = cn(
     "w-full rounded-xl border bg-card p-3 text-left",
     trap && "shadow-[inset_3px_0_0_var(--tag-rose)]",
-    must && "shadow-[inset_3px_0_0_var(--tag-green)]",
+    mark.label === "MUST PAY" && "shadow-[inset_3px_0_0_var(--tag-green)]",
     onClick && "hover:bg-accent/50",
     compact && "p-2.5"
   )

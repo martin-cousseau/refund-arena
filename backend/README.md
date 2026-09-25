@@ -16,7 +16,7 @@ Service name: `backend` (`refund-arena-backend`). Database: `db`. Frontend: `fro
 
 | Piece | Path | Role |
 |---|---|---|
-| Helpdesk agent | `agents/refund_helpdesk.py` | One Agent, four tools, first in `app/main.py` |
+| Resolvd subject | `shop/resolvd_runner.py` | SuperGrok triage, then Resolvd decide, then the isolated ledger |
 | Shop world | `shop/` | JSON ledger, policy, tickets, scorer, `/arena` routes |
 | Platform agents | `agents/builder.py` etc. | AgentOS traces / Studio — not the product |
 | Evals | `evals/cases.py` | Platform smoke + `arena` tag for a clause sample |

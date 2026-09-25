@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ResultTag, Tag } from "@/components/ui/tag"
-import { Textarea } from "@/components/ui/textarea"
 import { createConfig, deleteConfig, resetConfig, updateConfig } from "@/lib/api"
 import { useArena } from "@/lib/arena-context"
 import { cn } from "cn"
@@ -63,7 +62,7 @@ function PromptEditor({
   boardsByConfig: ReturnType<typeof useArena>["boardsByConfig"]
 }) {
   const [name, setName] = useState(config.name)
-  const [instructions, setInstructions] = useState(config.instructions)
+  const [limit, setLimit] = useState(String(config.refund_auto_limit ?? 50))
   const [dirty, setDirty] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -71,7 +70,7 @@ function PromptEditor({
     setSaving(true)
     setError(null)
     try {
-      await updateConfig(configId, { name, instructions })
+      await updateConfig(configId, { name, refund_auto_limit: Number(limit) })
       setDirty(false)
       await reload()
     } catch (err) {
@@ -86,12 +85,14 @@ function PromptEditor({
       <aside className="flex w-64 shrink-0 flex-col overflow-hidden rounded-xl border bg-card">
         <div className="border-b px-3 py-3">
           <h1 className="text-sm font-medium">Configs</h1>
-          <p className="text-[12px] text-muted-foreground">Same gold. Different instructions.</p>
+          <p className="text-[12px] text-muted-foreground">
+            Same gold labels on every row. Each row sets the auto-refund limit Resolvd uses.
+          </p>
         </div>
         <div className="flex flex-1 flex-col gap-1 overflow-auto p-2">
           {configs.map((row) => {
             const board = boardsByConfig[row.id]
-            const gateFail = board && board.ran > 0 && (board.gate_fail === 1 || board.forbidden_write === 1)
+            const gateFail = board && board.ran > 0 && (board.gate_fail ?? board.forbidden_write) > 0
             const ran = board && board.ran > 0
             return (
               <button
@@ -105,7 +106,7 @@ function PromptEditor({
               >
                 <div className="flex items-center gap-2">
                   <span className="min-w-0 truncate font-medium">{row.name}</span>
-                  {row.id === "production" ? <Tag tone="green">ship</Tag> : null}
+                  {row.id === "cap-50" ? <Tag tone="green">ship</Tag> : null}
                   {row.builtin ? <Tag tone="slate">builtin</Tag> : <Tag tone="violet">custom</Tag>}
                 </div>
                 <div className="mt-1 flex items-center justify-between">
@@ -123,11 +124,11 @@ function PromptEditor({
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
         <div className="border-b px-4 py-3">
-          <h2 className="text-sm font-medium">Prompt</h2>
+          <h2 className="text-sm font-medium">Refund auto limit</h2>
           <p className="text-[12px] text-muted-foreground">
             {config.builtin
-              ? "Builtin. Edit in place, or reset to the seed. Production is the ship candidate."
-              : "Custom config. Persisted on this operator desk."}
+              ? "Built-in limit. Cap 50 is the ship row. Reset puts the seed limit back."
+              : "Custom limit. Saved on this desk."}
           </p>
         </div>
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto p-4">
@@ -142,22 +143,25 @@ function PromptEditor({
               }}
             />
           </div>
-          <div className="flex min-h-0 flex-1 flex-col">
+          <div>
             <div className="mb-1 flex items-center justify-between">
-              <Label htmlFor="cfg-prompt">Instructions</Label>
+              <Label htmlFor="cfg-limit">REFUND_AUTO_LIMIT</Label>
               <span className="font-mono text-[11px] text-muted-foreground">
                 {dirty ? "unsaved" : "saved"} · {config.model}
               </span>
             </div>
-            <Textarea
-              id="cfg-prompt"
-              className="min-h-[360px] flex-1"
-              value={instructions}
+            <Input
+              id="cfg-limit"
+              inputMode="decimal"
+              value={limit}
               onChange={(event) => {
-                setInstructions(event.target.value)
+                setLimit(event.target.value)
                 setDirty(true)
               }}
             />
+            <p className="mt-2 text-[12px] text-muted-foreground">
+              Resolvd can pay a refund at or under this dollar amount. A larger refund escalates and does not pay. Triage is SuperGrok. Gold labels stay fixed when you change the limit.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button disabled={!dirty || saving} onClick={() => void save()}>
@@ -166,7 +170,7 @@ function PromptEditor({
             <Button
               variant="outline"
               onClick={() =>
-                void createConfig({ name: `${config.name} copy`, instructions, clone_from: config.id }).then((row) => {
+                void createConfig({ name: `${config.name} copy`, instructions: config.instructions, clone_from: config.id }).then((row) => {
                   void reload().then(() => setConfigId(row.id))
                 })
               }
@@ -190,7 +194,7 @@ function PromptEditor({
                 onClick={() =>
                   void deleteConfig(config.id)
                     .then(() => {
-                      setConfigId("production")
+                      setConfigId("cap-50")
                       return reload()
                     })
                     .catch((err: unknown) => setError(err instanceof Error ? err.message : "Delete failed."))
@@ -206,8 +210,10 @@ function PromptEditor({
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>New prompt config</DialogTitle>
-            <DialogDescription>Starts empty, or duplicate the current prompt from the list instead.</DialogDescription>
+            <DialogTitle>New config</DialogTitle>
+            <DialogDescription>
+              Creates a config with this name. The auto-refund limit starts at $50. Duplicate copies the selected config instead.
+            </DialogDescription>
           </DialogHeader>
           <Label htmlFor="new-name">Name</Label>
           <Input id="new-name" value={newName} onChange={(event) => setNewName(event.target.value)} />
