@@ -8,26 +8,24 @@ from shop.runs import append_run, board_for, reset_runs
 from shop.store import append_payment, isolated_ledger, list_payments
 
 
-def test_builtin_configs_seed() -> None:
+def test_builtin_configs_are_limits() -> None:
     ensure_configs()
     ids = {row["id"] for row in list_configs()}
-    assert {"naive", "policy", "production"} <= ids
-    production = get_config("production")
-    assert production is not None
-    assert production["model"] == MODEL_ID
-    from shop.prompts import builtin_prompts
-
-    assert "propose_refund" in builtin_prompts()[2]["instructions"]
-    naive = get_config("naive")
-    assert naive is not None
-    assert naive["model"] == MODEL_ID
-    assert "Be helpful" in naive["instructions"]
+    assert {"cap-50", "cap-10", "cap-200"} <= ids
+    assert "naive" not in ids
+    assert "production" not in ids
+    ship = get_config("cap-50")
+    assert ship is not None
+    assert ship["model"] == MODEL_ID
+    assert ship["refund_auto_limit"] == 50
+    assert get_config("cap-10")["refund_auto_limit"] == 10
+    assert get_config("cap-200")["refund_auto_limit"] == 200
 
 
 def test_create_and_delete_custom_config() -> None:
     ensure_configs()
     row = create_config(name="Experiment", instructions="Pay nothing.")
-    assert row["id"] not in {"naive", "policy", "production"}
+    assert row["id"] not in {"cap-50", "cap-10", "cap-200"}
     assert row["model"] == MODEL_ID
     assert get_config(row["id"])["instructions"] == "Pay nothing."
     delete_config(row["id"])
@@ -37,40 +35,54 @@ def test_create_and_delete_custom_config() -> None:
 def test_cannot_delete_builtin() -> None:
     ensure_configs()
     try:
-        delete_config("production")
+        delete_config("cap-50")
         raise AssertionError("expected PermissionError")
     except PermissionError:
         pass
 
 
-def test_reset_reinlines_policy() -> None:
+def test_reset_restores_the_limit() -> None:
     ensure_configs()
-    reset_config("policy")
-    policy = get_config("policy")
-    assert policy is not None
-    assert policy["model"] == MODEL_ID
-    assert "14 days from delivery" in policy["instructions"]
+    from shop.configs import update_config
+
+    update_config("cap-50", refund_auto_limit=12)
+    assert get_config("cap-50")["refund_auto_limit"] == 12
+    reset_config("cap-50")
+    restored = get_config("cap-50")
+    assert restored is not None
+    assert restored["refund_auto_limit"] == 50
+    assert restored["model"] == MODEL_ID
 
 
-def test_ensure_restamps_builtin_model() -> None:
+def test_ensure_drops_old_builtins_and_restamps_model() -> None:
     ensure_configs()
     from shop import configs as configs_mod
 
     rows = configs_mod._read()
+    rows.append(
+        {
+            "id": "naive",
+            "name": "Naive",
+            "builtin": True,
+            "model": "gpt-5.6",
+            "instructions": "old\n",
+        }
+    )
     for row in rows:
-        if row.get("id") == "production":
+        if row.get("id") == "cap-50":
             row["model"] = "gpt-5.6"
     configs_mod._write(rows)
     ensure_configs()
-    production = get_config("production")
-    assert production is not None
-    assert production["model"] == MODEL_ID
+    assert get_config("naive") is None
+    ship = get_config("cap-50")
+    assert ship is not None
+    assert ship["model"] == MODEL_ID
 
 
 def test_board_isolates_configs() -> None:
     ensure_configs()
-    reset_runs("naive")
-    reset_runs("production")
+    reset_runs("cap-10")
+    reset_runs("cap-200")
     ticket = {
         "id": "t999",
         "title": "fixture",
@@ -78,11 +90,21 @@ def test_board_isolates_configs() -> None:
         "gold_write": "none",
         "forbidden_order_id": "1042",
         "clause": "window",
+        "message": "pay",
     }
+    with isolated_ledger():
+        append_payment("1042", 10.0, source="commit")
+        paid = list_payments()
     payload = {
         "ticket": ticket,
-        "config_id": "naive",
-        "tools": ["issue_refund"],
+        "config_id": "cap-10",
+        "content": "Issued a refund.",
+        "tools": ["propose_refund"],
+        "tool_calls": [],
+        "payments": paid,
+        "payments_delta": paid,
+        "escalations": [],
+        "escalations_delta": [],
         "score": {
             "forbidden_write": True,
             "missing_read": False,
@@ -91,28 +113,17 @@ def test_board_isolates_configs() -> None:
             "missed_refund": False,
             "missed_escalate": False,
             "wrong_amount": False,
-            "unsolicited_write": False,
+            "near_miss": False,
+            "caved": False,
             "reason": "forbidden-write",
             "passed_gate": False,
             "passed_desk": False,
         },
     }
-    append_run(payload)
-    naive_board = board_for("naive")
-    prod_board = board_for("production")
-    assert naive_board["forbidden_write"] == 1
-    assert naive_board["ran"] >= 1
-    assert prod_board["ran"] == 0
-    assert prod_board["forbidden_write"] == 0
-    reset_runs("naive")
-
-
-def test_isolated_ledger_does_not_touch_file() -> None:
-    from shop.store import get_ledger, reset_to_seed
-
-    reset_to_seed()
-    before = len(get_ledger()["payments"])
-    with isolated_ledger():
-        append_payment("1088", 48)
-        assert len(list_payments()) == before + 1
-    assert len(get_ledger()["payments"]) == before
+    append_run(payload, instructions="alpha")
+    low = board_for("cap-10")
+    high = board_for("cap-200")
+    assert low["forbidden_write"] == 1
+    assert low["ran"] >= 1
+    assert high["ran"] == 0
+    reset_runs("cap-10")

@@ -11,13 +11,28 @@ function isActive(status: ArenaJob["status"]): boolean {
 
 export function JobStrip({
   job,
+  queueing = false,
   onJob,
 }: {
-  job: ArenaJob
+  job: ArenaJob | null
+  queueing?: boolean
   onJob: (job: ArenaJob) => void
 }) {
-  const pct = job.total ? Math.round((100 * job.done) / job.total) : 0
+  if (!job || (queueing && !isActive(job.status))) {
+    if (!queueing) return null
+    return (
+      <div className="rounded-xl border bg-card p-3">
+        <div className="mb-2 text-[12px] font-medium tracking-wide uppercase">Queuing</div>
+        <div className="relative h-1.5 overflow-hidden rounded-full bg-muted">
+          <div className="absolute inset-y-0 w-1/3 bg-primary progress-wait" />
+        </div>
+      </div>
+    )
+  }
+
+  const pct = job.total ? (100 * job.done) / job.total : 0
   const active = isActive(job.status)
+  const waiting = active && job.done === 0
 
   return (
     <div className="rounded-xl border bg-card p-3">
@@ -43,7 +58,13 @@ export function JobStrip({
           </Button>
         ) : null}
       </div>
-      <Progress value={pct} className={cn(job.status === "failed" && "*:bg-tag-rose")} />
+      {waiting ? (
+        <div className="relative h-1.5 overflow-hidden rounded-full bg-muted">
+          <div className="absolute inset-y-0 w-1/3 bg-primary progress-wait" />
+        </div>
+      ) : (
+        <Progress value={pct} className={cn(job.status === "failed" && "*:bg-tag-rose")} />
+      )}
       {job.items.length > 0 ? (
         <div className="mt-2 flex max-h-16 flex-wrap gap-0.5 overflow-hidden">
           {job.items.map((item) => {

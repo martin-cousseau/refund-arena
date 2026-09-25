@@ -22,14 +22,16 @@ def test_reset_hydrates_shop_fields() -> None:
 def test_world_payload() -> None:
     reset_to_seed()
     payload = world()
-    assert "14 days from delivery" in payload["policy"]
-    assert payload["refund_window_days"] == 14
-    assert payload["amount_cap_eur"] == 150
-    assert len(payload["tickets"]) == len(load_tickets())
-    assert len(payload["orders"]) == len(load_seed()["orders"])
-    assert payload["trap_order_ids"] == list(trap_order_ids())
+    assert payload["amount_cap_eur"] == 50
+    assert len(payload["tickets"]) == len(load_tickets()) == 144
+    assert payload["tickets"][0]["id"] == "r001"
+    assert payload["orders"][0]["currency"] == "USD"
+    assert payload["orders"][0]["sku"].startswith("#")
+    assert "5004" in payload["trap_order_ids"] or any(
+        row["already_refunded"] and row["id"] in payload["trap_order_ids"] for row in payload["orders"]
+    )
     pages = {page["id"]: page for page in payload["policy_pages"]}
     assert pages["archive-2024"]["status"] == "archived"
-    assert pages["ownership"]["status"] == "current"
-    assert payload["service"]["does_not_check"] == ["ownership"]
     assert "archive-2024" not in payload["policy"]
+    assert len(load_seed()["orders"]) == 80
+    assert trap_order_ids()

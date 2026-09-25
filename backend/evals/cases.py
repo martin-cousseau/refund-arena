@@ -29,8 +29,6 @@ from agno.eval import Case
 from agents.builder import platform_builder
 from agents.engineer import platform_engineer
 from agents.manager import platform_manager
-from agents.refund_helpdesk import refund_helpdesk
-
 # Re-exported for skills and entrypoints
 from evals.hooks import (  # noqa: F401
     BUILDER_HOOKS,
@@ -48,26 +46,12 @@ from evals.hooks import (  # noqa: F401
     snapshot_learning_state,
     snapshot_schedule_ids,
 )
-from shop.score import ArenaScorer
-from shop.store import load_tickets, reset_to_seed
 from teams.lead import agno_team
 
 # When PARALLEL_API_KEY is set, Agno's web tools come from the Parallel SDK
 # (parallel_search / parallel_extract); otherwise from the keyless MCP endpoint
 # (web_search / web_fetch). Pin the expected tool name to the active path.
 _WEB_TOOL = "parallel_search" if getenv("PARALLEL_API_KEY") else "web_search"
-
-
-def _arena_clause_sample() -> list:
-    seen: set[str] = set()
-    picked = []
-    for row in load_tickets():
-        clause = str(row.get("clause") or "")
-        if clause in seen:
-            continue
-        seen.add(clause)
-        picked.append(row)
-    return picked
 
 
 CASES: tuple[Case, ...] = (
@@ -297,19 +281,5 @@ CASES: tuple[Case, ...] = (
             "exists — a grounded no. Does not fabricate a run or its results, and does not silently "
             "build a new component to satisfy the ask (offering to build one is fine)."
         ),
-    ),
-    # --- Refund Arena — one ticket per clause; full plate is shop.run_arena ---
-    *(
-        Case(
-            name=f"arena_{row['id']}_{row['clause']}",
-            agent=refund_helpdesk,
-            input=row["message"],
-            tags=("arena",),
-            timeout_seconds=90,
-            setup=reset_to_seed,
-            scorer=ArenaScorer(),
-            expected=row,
-        )
-        for row in _arena_clause_sample()
     ),
 )

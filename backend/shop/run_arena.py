@@ -3,7 +3,7 @@
 Usage (inside the backend container, from /app):
     python -m shop.run_arena
     python -m shop.run_arena --config naive --sample 12 --concurrency 4
-    python -m shop.run_arena --config production --all --concurrency 4
+    python -m shop.run_arena --config cap-50 --all --concurrency 4
 """
 
 from __future__ import annotations
@@ -15,23 +15,15 @@ import json
 import sys
 from typing import Any
 
-from app.settings import SIGNIN_HINT, inference_ready
+from app.settings import MODEL_ID, SIGNIN_HINT, inference_ready
 from shop.configs import ensure_configs, get_config
-from shop.dialogue import follow_prompt, opening_prompt
 from shop.live import begin, clear, publish
-from shop.runs import RESULTS_DIR, append_run
+from shop.runs import RESULTS_DIR, append_run, begin_run, dataset_stamp, instructions_hash
 from shop.score import Board, TicketScore, delta_rows, jsonable, score_run, score_ticket, tool_calls_from_run
 from shop.store import LEDGER_PATH, isolated_ledger, load_tickets
 
 RESULTS_PATH = RESULTS_DIR / "latest.json"
-DEFAULT_CONFIG = "production"
-
-
-def _tag_calls(run: Any, turn: int) -> list[dict[str, Any]]:
-    calls = tool_calls_from_run(run)
-    for call in calls:
-        call["turn"] = turn
-    return calls
+DEFAULT_CONFIG = "cap-50"
 
 
 def _publish_turns(
@@ -60,74 +52,86 @@ def _publish_turns(
     )
 
 
+def _execute_ticket_sync(
+    ticket: dict[str, Any],
+    *,
+    config_id: str,
+    limit: float,
+    epoch: int,
+    model_id: str,
+    instructions: str,
+) -> tuple[TicketScore, dict[str, Any]]:
+    """Score one case. SuperGrok triage blocks, so this runs off the event loop."""
+    from shop.resolvd_runner import live_triage, run_case
+    from shop.store import append_escalation, append_payment
+
+    with isolated_ledger() as ledger:
+        before = {
+            "payments": copy.deepcopy(ledger["payments"]),
+            "escalations": copy.deepcopy(ledger["escalations"]),
+            "orders": copy.deepcopy(ledger["orders"]),
+        }
+        turns, calls, payments, escalations = run_case(ticket, triage_for=live_triage, limit=limit)
+        for row in payments:
+            append_payment(str(row["order_id"]), float(row["amount_eur"]), source="commit")
+        for row in escalations:
+            append_escalation(str(row["order_id"]), str(row["reason"]))
+        _publish_turns(config_id, str(ticket["id"]), epoch, f"turn-{len(turns)}", turns, calls)
+        after = {
+            "payments": list(ledger["payments"]),
+            "escalations": list(ledger["escalations"]),
+            "orders": list(ledger["orders"]),
+        }
+    combined = {"content": turns[-1]["content"], "tools": calls, "turns": turns}
+    scored = score_ticket(
+        ticket,
+        combined,
+        payments_before=before["payments"],
+        payments_after=after["payments"],
+        escalations_before=before["escalations"],
+        escalations_after=after["escalations"],
+    )
+    payload = serialize_ticket_run(
+        ticket,
+        combined,
+        scored,
+        before=before,
+        after=after,
+        config_id=config_id,
+        turns=turns,
+        model_id=model_id,
+        instructions=instructions,
+    )
+    return scored, payload
+
+
 async def execute_ticket(
     ticket: dict[str, Any],
     *,
     config_id: str = DEFAULT_CONFIG,
     variant: str | None = None,
+    instructions: str | None = None,
 ) -> tuple[TicketScore, dict[str, Any]]:
-    """Run one ticket on an isolated ledger. A follow_up is a second turn."""
-    from agents.refund_helpdesk import make_helpdesk
-
+    """Run one case. Triage is SuperGrok. The limit comes from the config."""
     key = (config_id or variant or DEFAULT_CONFIG).strip()
     config = get_config(key)
     if config is None:
         raise KeyError(f"unknown config {key}")
+    if instructions is not None:
+        config = {**config, "instructions": instructions}
+    limit = float(config.get("refund_auto_limit") or 50)
     ticket_id = str(ticket["id"])
     epoch = begin(key, ticket_id)
     try:
-        with isolated_ledger() as ledger:
-            before = {
-                "payments": copy.deepcopy(ledger["payments"]),
-                "escalations": copy.deepcopy(ledger["escalations"]),
-                "orders": copy.deepcopy(ledger["orders"]),
-            }
-            agent = make_helpdesk(config)
-            session_id = f"arena-{key}-{ticket_id}-{id(ledger)}"
-            first = await agent.arun(
-                opening_prompt(ticket),
-                user_id="arena-runner",
-                session_id=session_id,
-            )
-            calls = _tag_calls(first, 1)
-            turns = [{"turn": 1, "content": str(getattr(first, "content", "") or "")}]
-            _publish_turns(key, ticket_id, epoch, "turn-1", turns, calls)
-            if ticket.get("follow_up"):
-                second = await agent.arun(
-                    follow_prompt(ticket, turns[0]["content"], calls),
-                    user_id="arena-runner",
-                    session_id=session_id,
-                )
-                more = _tag_calls(second, 2)
-                if len(more) >= len(calls) and more[: len(calls)] == calls:
-                    more = more[len(calls) :]
-                calls.extend(more)
-                turns.append({"turn": 2, "content": str(getattr(second, "content", "") or "")})
-                _publish_turns(key, ticket_id, epoch, "turn-2", turns, calls)
-            after = {
-                "payments": list(ledger["payments"]),
-                "escalations": list(ledger["escalations"]),
-                "orders": list(ledger["orders"]),
-            }
-        combined = {"content": turns[-1]["content"], "tools": calls}
-        scored = score_ticket(
+        return await asyncio.to_thread(
+            _execute_ticket_sync,
             ticket,
-            combined,
-            payments_before=before["payments"],
-            payments_after=after["payments"],
-            escalations_before=before["escalations"],
-            escalations_after=after["escalations"],
-        )
-        payload = serialize_ticket_run(
-            ticket,
-            combined,
-            scored,
-            before=before,
-            after=after,
             config_id=key,
-            turns=turns,
+            limit=limit,
+            epoch=epoch,
+            model_id=MODEL_ID,
+            instructions=str(config.get("instructions") or ""),
         )
-        return scored, payload
     finally:
         clear(key, ticket_id)
 
@@ -138,9 +142,14 @@ async def run_ticket(
     config_id: str = DEFAULT_CONFIG,
     persist: bool = True,
 ) -> dict[str, Any]:
-    _scored, payload = await execute_ticket(ticket, config_id=config_id)
-    if persist:
-        append_run(payload)
+    snap = begin_run(config_id=config_id, model_id=MODEL_ID, kind="single") if persist else None
+    _scored, payload = await execute_ticket(
+        ticket,
+        config_id=config_id,
+        instructions=None if snap is None else snap["instructions"],
+    )
+    if snap is not None:
+        append_run(payload, run_id=snap["id"])
     return payload
 
 
@@ -153,6 +162,8 @@ def serialize_ticket_run(
     after: dict[str, Any],
     config_id: str,
     turns: list[dict[str, Any]] | None = None,
+    model_id: str | None = None,
+    instructions: str | None = None,
 ) -> dict[str, Any]:
     tool_calls = list(scored.tool_calls or tool_calls_from_run(run))
     payments_delta = delta_rows(before["payments"], after["payments"])
@@ -183,6 +194,9 @@ def serialize_ticket_run(
         "payments": after["payments"],
         "escalations": after["escalations"],
         "orders": after["orders"],
+        "model": model_id or MODEL_ID,
+        "dataset": dataset_stamp(ticket),
+        "prompt_version": {"instructions_hash": instructions_hash(instructions or "")},
     }
 
 
@@ -205,12 +219,17 @@ async def run_arena(
     conc = max(1, min(int(concurrency), MAX_CONCURRENCY))
     semaphore = asyncio.Semaphore(conc)
     scores: list[TicketScore] = []
+    snap = begin_run(config_id=config_id, model_id=MODEL_ID, kind="job") if persist else None
 
     async def one(tid: str) -> TicketScore:
         async with semaphore:
-            scored, payload = await execute_ticket(tickets[tid], config_id=config_id)
-            if persist:
-                append_run(payload)
+            scored, payload = await execute_ticket(
+                tickets[tid],
+                config_id=config_id,
+                instructions=None if snap is None else snap["instructions"],
+            )
+            if snap is not None:
+                append_run(payload, run_id=snap["id"])
             return scored
 
     gathered = await asyncio.gather(*(one(tid) for tid in ids))
@@ -258,7 +277,7 @@ def render(board: Board, *, config_id: str = DEFAULT_CONFIG) -> str:
 def main() -> int:
     ensure_configs()
     parser = argparse.ArgumentParser(description="Run Refund Arena tickets.")
-    parser.add_argument("--config", default=DEFAULT_CONFIG, help="Prompt config id (default: production)")
+    parser.add_argument("--config", default=DEFAULT_CONFIG, help="Limit config id (default: cap-50)")
     parser.add_argument("--sample", type=int, default=None, help="Run N random tickets")
     parser.add_argument("--all", action="store_true", help="Run every ticket (default if no --sample)")
     parser.add_argument("--concurrency", type=int, default=4)

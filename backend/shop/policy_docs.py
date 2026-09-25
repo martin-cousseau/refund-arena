@@ -1,6 +1,6 @@
-"""Policy pages the agent retrieves one at a time.
+"""Policy pages listed on the shop desk.
 
-Current pages are the policy. archive-2024 is reachable and wrong.
+archive-2024 sits in the same folder and is not current policy.
 The refund service does not read these files. Gold does not either.
 """
 
@@ -11,7 +11,6 @@ from typing import Any
 
 POLICY_DIR = Path(__file__).resolve().parent / "policy"
 PAGE_ORDER = ("returns", "sale", "handoff", "ownership", "archive-2024")
-CURRENT_IDS = frozenset({"returns", "sale", "handoff", "ownership"})
 
 
 def _parse(text: str, fallback_id: str) -> dict[str, Any]:
@@ -46,21 +45,6 @@ def load_pages() -> list[dict[str, Any]]:
     ordered = [by_id[key] for key in PAGE_ORDER if key in by_id]
     ordered.extend(page for key, page in sorted(by_id.items()) if key not in PAGE_ORDER)
     return ordered
-
-
-def get_page(doc_id: str) -> dict[str, Any] | None:
-    key = (doc_id or "").strip().lower()
-    aliases = {"escalation": "handoff", "returns-policy": "returns"}
-    key = aliases.get(key, key)
-    for page in load_pages():
-        if page["id"] == key:
-            return page
-    return None
-
-
-def is_current(doc_id: str) -> bool:
-    page = get_page(doc_id)
-    return bool(page and page["status"] == "current" and page["id"] in CURRENT_IDS)
 
 
 def current_text() -> str:

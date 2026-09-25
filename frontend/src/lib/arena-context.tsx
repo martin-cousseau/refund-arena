@@ -11,6 +11,7 @@ import {
 } from "react"
 
 import {
+  fetchActiveJob,
   fetchBoard,
   fetchJob,
   fetchRuns,
@@ -61,6 +62,7 @@ type ArenaContextValue = {
   job: ArenaJob | null
   error: string | null
   loading: boolean
+  queueing: boolean
   setConfigId: (id: string) => void
   setError: (message: string | null) => void
   setBoard: (board: LiveBoard) => void
@@ -81,10 +83,10 @@ const ArenaContext = createContext<ArenaContextValue | null>(null)
 export function ArenaProvider({ children }: { children: ReactNode }) {
   const [world, setWorld] = useState<World | null>(null)
   const [configId, setConfigIdState] = useState(
-    () => localStorage.getItem(STORAGE_KEY) || "production"
+    () => localStorage.getItem(STORAGE_KEY) || "cap-50"
   )
   const [board, setBoardState] = useState<LiveBoard>(() =>
-    emptyBoard(0, "production")
+    emptyBoard(0, "cap-50")
   )
   const [boardsByConfig, setBoardsByConfig] = useState<
     Record<string, LiveBoard>
@@ -97,6 +99,7 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
   >({})
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [queueing, setQueueing] = useState(false)
 
   const configs = useMemo(() => world?.configs ?? [], [world])
   const config =
@@ -179,7 +182,7 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
     setWorld(next)
     const selected = next.configs?.some((row) => row.id === configId)
       ? configId
-      : (next.configs?.[0]?.id ?? "production")
+      : (next.configs?.[0]?.id ?? "cap-50")
     if (selected !== configId) setConfigId(selected)
     const nextBoard = await fetchBoard(selected)
     applyBoard(nextBoard)
@@ -200,14 +203,19 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
       concurrency?: number
     }) => {
       setError(null)
-      const next = await submitJob({
-        config_id: activeConfigId,
-        concurrency: body.concurrency ?? 4,
-        sample: body.sample,
-        all: body.all,
-        ticket_ids: body.ticket_ids,
-      })
-      setJob(next)
+      setQueueing(true)
+      try {
+        const next = await submitJob({
+          config_id: activeConfigId,
+          concurrency: body.concurrency ?? 4,
+          sample: body.sample,
+          all: body.all,
+          ticket_ids: body.ticket_ids,
+        })
+        setJob(next)
+      } finally {
+        setQueueing(false)
+      }
     },
     [activeConfigId, setJob]
   )
@@ -220,13 +228,23 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
         setWorld(next)
         const selected = next.configs?.some((row) => row.id === configId)
           ? configId
-          : (next.configs?.[0]?.id ?? "production")
+          : (next.configs?.[0]?.id ?? "cap-50")
         if (selected !== configId) setConfigId(selected)
         const nextBoard = await fetchBoard(selected)
         if (cancelled) return
         applyBoard(nextBoard)
         setError(null)
         await Promise.all([loadRuns(selected), loadCompare(next.configs ?? [])])
+        if (cancelled) return
+        void fetchActiveJob()
+          .then((active) => {
+            if (cancelled || !active || !isActiveStatus(active.status)) return
+            setJobByConfig((prev) =>
+              prev[active.config_id] ? prev : { ...prev, [active.config_id]: active }
+            )
+            if (active.board) applyBoard(active.board)
+          })
+          .catch(() => undefined)
       })
       .catch((err: unknown) => {
         if (!cancelled)
@@ -313,6 +331,7 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
       job,
       error,
       loading,
+      queueing,
       setConfigId,
       setError,
       setBoard: applyBoard,
@@ -333,6 +352,7 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
       job,
       error,
       loading,
+      queueing,
       setConfigId,
       applyBoard,
       setJob,

@@ -87,6 +87,7 @@ def create_config(*, name: str, instructions: str, clone_from: str | None = None
         "builtin": False,
         "model": MODEL_ID,
         "instructions": text,
+        "refund_auto_limit": float((source or {}).get("refund_auto_limit") or 50),
         "created_at": _now(),
         "updated_at": _now(),
     }
@@ -97,7 +98,13 @@ def create_config(*, name: str, instructions: str, clone_from: str | None = None
     return dict(row)
 
 
-def update_config(config_id: str, *, name: str | None = None, instructions: str | None = None) -> dict[str, Any]:
+def update_config(
+    config_id: str,
+    *,
+    name: str | None = None,
+    instructions: str | None = None,
+    refund_auto_limit: float | None = None,
+) -> dict[str, Any]:
     key = (config_id or "").strip()
     with _lock:
         rows = _read()
@@ -106,7 +113,11 @@ def update_config(config_id: str, *, name: str | None = None, instructions: str 
                 continue
             if name is not None and name.strip():
                 row["name"] = name.strip()
-            if instructions is not None:
+            if refund_auto_limit is not None:
+                limit = float(refund_auto_limit)
+                row["refund_auto_limit"] = limit
+                row["instructions"] = f"REFUND_AUTO_LIMIT={limit}\n"
+            elif instructions is not None:
                 row["instructions"] = instructions
             row["updated_at"] = _now()
             _write(rows)
@@ -149,15 +160,20 @@ def ensure_configs() -> list[dict[str, Any]]:
     write_seed_file()
     with _lock:
         rows = _read()
-        seed_by_id = {row["id"]: row for row in _load_seed()}
-        changed = False
-        for row in rows:
+        seed_rows = _load_seed()
+        seed_by_id = {row["id"]: row for row in seed_rows}
+        seed_ids = set(seed_by_id)
+        kept = [row for row in rows if not (row.get("builtin") and row.get("id") not in seed_ids)]
+        seen = {row.get("id") for row in kept}
+        for seed in seed_rows:
+            if seed["id"] not in seen:
+                kept.append(dict(seed))
+        for row in kept:
             seed = seed_by_id.get(row.get("id"))
             if seed is None or not row.get("builtin"):
                 continue
-            if row.get("model") != seed.get("model"):
-                row["model"] = seed.get("model")
-                changed = True
-        if changed:
-            _write(rows)
-        return list(rows)
+            row["model"] = seed.get("model")
+            if "refund_auto_limit" not in row:
+                row["refund_auto_limit"] = seed.get("refund_auto_limit")
+        _write(kept)
+        return list(kept)

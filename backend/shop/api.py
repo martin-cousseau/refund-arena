@@ -28,7 +28,7 @@ from shop.queue import (
     submit_job,
 )
 from shop.run_arena import run_ticket
-from shop.runs import board_for, latest_by_ticket, reset_runs
+from shop.runs import board_for, history_for, latest_by_ticket, reset_runs
 from shop.store import get_ledger, load_policy, load_tickets, reset_to_seed, world
 
 router = APIRouter(prefix="/arena", tags=["arena"])
@@ -36,12 +36,12 @@ router = APIRouter(prefix="/arena", tags=["arena"])
 
 class RunBody(BaseModel):
     ticket_id: str
-    config_id: str = "production"
+    config_id: str = "cap-50"
     persist: bool = True
 
 
 class JobBody(BaseModel):
-    config_id: str = "production"
+    config_id: str = "cap-50"
     ticket_ids: list[str] | None = None
     sample: int | None = Field(default=None, ge=1, le=500)
     all: bool = False
@@ -57,6 +57,7 @@ class ConfigCreateBody(BaseModel):
 class ConfigUpdateBody(BaseModel):
     name: str | None = None
     instructions: str | None = None
+    refund_auto_limit: float | None = None
 
 
 class ResetRunsBody(BaseModel):
@@ -148,7 +149,12 @@ def arena_create_config(body: ConfigCreateBody) -> dict[str, Any]:
 @router.put("/configs/{config_id}")
 def arena_update_config(config_id: str, body: ConfigUpdateBody) -> dict[str, Any]:
     try:
-        return update_config(config_id, name=body.name, instructions=body.instructions)
+        return update_config(
+            config_id,
+            name=body.name,
+            instructions=body.instructions,
+            refund_auto_limit=body.refund_auto_limit,
+        )
     except KeyError:
         raise HTTPException(status_code=404, detail=f"unknown config {config_id}") from None
 
@@ -175,24 +181,44 @@ def arena_reset_config(config_id: str) -> dict[str, Any]:
 
 
 @router.get("/board")
-def arena_board(config_id: str = Query(default="production")) -> dict[str, Any]:
+def arena_board(
+    config_id: str = Query(default="cap-50"),
+    model: str | None = Query(default=None),
+    prompt_version: int | None = Query(default=None),
+) -> dict[str, Any]:
     if get_config(config_id) is None:
         raise HTTPException(status_code=404, detail=f"unknown config {config_id}")
-    return board_for(config_id)
+    return board_for(config_id, model_id=model or None, prompt_version=prompt_version)
 
 
 @router.get("/live")
 def arena_live(
-    config_id: str = Query(default="production"),
+    config_id: str = Query(default="cap-50"),
     ticket_id: str = Query(...),
 ) -> dict[str, Any]:
     """Turn snapshot for a ticket that is still inside execute_ticket."""
     return {"live": read_live(config_id, ticket_id)}
 
 
+@router.get("/runs/history")
+def arena_runs_history(
+    config_id: str = Query(default="cap-50"),
+    ticket_id: str = Query(...),
+) -> dict[str, Any]:
+    if get_config(config_id) is None:
+        raise HTTPException(status_code=404, detail=f"unknown config {config_id}")
+    return {"config_id": config_id, "ticket_id": ticket_id, "runs": history_for(config_id, ticket_id)}
+
+
 @router.get("/runs")
-def arena_runs(config_id: str = Query(default="production")) -> dict[str, Any]:
-    latest = latest_by_ticket(config_id)
+def arena_runs(
+    config_id: str = Query(default="cap-50"),
+    model: str | None = Query(default=None),
+    prompt_version: int | None = Query(default=None),
+) -> dict[str, Any]:
+    if get_config(config_id) is None:
+        raise HTTPException(status_code=404, detail=f"unknown config {config_id}")
+    latest = latest_by_ticket(config_id, model_id=model or None, prompt_version=prompt_version)
     return {"config_id": config_id, "runs": list(latest.values())}
 
 
@@ -219,7 +245,13 @@ async def arena_run(body: RunBody) -> dict[str, Any]:
 async def arena_submit_job(body: JobBody) -> dict[str, Any]:
     _require_inference()
     try:
-        ids = resolve_ticket_ids(ticket_ids=body.ticket_ids, sample=body.sample, all_tickets=body.all)
+        ids = resolve_ticket_ids(
+            ticket_ids=body.ticket_ids,
+            sample=body.sample,
+            all_tickets=body.all,
+            config_id=body.config_id,
+            unrun_only=not body.ticket_ids,
+        )
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from None
     except ValueError as exc:
@@ -252,7 +284,7 @@ def arena_cancel_job(job_id: str) -> dict[str, Any]:
 
 
 @router.get("/scoreboard")
-def arena_scoreboard(config_id: str = Query(default="production")) -> dict[str, Any]:
+def arena_scoreboard(config_id: str = Query(default="cap-50")) -> dict[str, Any]:
     return board_for(config_id)
 
 

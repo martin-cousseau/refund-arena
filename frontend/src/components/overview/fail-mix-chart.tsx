@@ -10,8 +10,8 @@ export function FailMixChart({ data }: { data: MixSlice[] }) {
   if (total === 0) {
     return (
       <div className="flex h-[220px] flex-col items-center justify-center gap-1 text-center">
-        <p className="text-sm font-medium text-tag-green">Desk is clean</p>
-        <p className="text-[12px] text-muted-foreground">No primary fails on this board.</p>
+        <p className="text-sm font-medium">No failed tickets</p>
+        <p className="text-[12px] text-muted-foreground">No ticket on this board has a scoring flag.</p>
       </div>
     )
   }

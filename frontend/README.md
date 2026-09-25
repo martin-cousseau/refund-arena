@@ -22,4 +22,4 @@ pnpm install
 pnpm dev                 # http://localhost:3000, proxies /arena to :8000
 ```
 
-Naive / Policy / Production are prompt configs on the same gold. Production is the ship candidate. The board for a config grows as you run tickets and survives a reload.
+Cap 50, cap 10, and cap 200 are limit configs on the same gold. Cap 50 is the ship row. The board for a config grows as you run cases and survives a reload.

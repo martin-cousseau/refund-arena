@@ -7,11 +7,11 @@ import { useArena } from "@/lib/arena-context"
 import { cn } from "cn"
 
 const PAGES = [
-  { to: "/", label: "Overview", hint: "Dashboard" },
-  { to: "/queue", label: "Queue", hint: "Tickets" },
-  { to: "/runs", label: "Runs", hint: "Table" },
-  { to: "/shop", label: "Shop", hint: "World" },
-  { to: "/prompts", label: "Prompts", hint: "Configs" },
+  { to: "/", label: "Overview", hint: "Ship bar and charts" },
+  { to: "/queue", label: "Queue", hint: "Run cases" },
+  { to: "/runs", label: "Runs", hint: "Saved results" },
+  { to: "/shop", label: "Shop", hint: "Orders and ledger" },
+  { to: "/prompts", label: "Prompts", hint: "Auto-refund limit" },
 ]
 
 export function CommandPalette() {

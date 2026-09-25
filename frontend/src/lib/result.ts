@@ -3,14 +3,14 @@ import type { JobItem, Score } from "@/lib/types"
 export type ResultKind = "unrun" | "running" | "pass" | "desk" | "gate" | "error"
 
 export const FAIL_FLAGS = [
-  { key: "forbidden_write", label: "forbidden-write", short: "GATE", color: "#E11D48" },
-  { key: "missed_refund", label: "missed-refund", short: "MISS PAY", color: "#D97706" },
-  { key: "missed_escalate", label: "missed-escalate", short: "MISS ESC", color: "#EA580C" },
-  { key: "wrong_amount", label: "wrong-amount", short: "AMOUNT", color: "#4F46E5" },
-  { key: "missing_read", label: "missing-read", short: "NO READ", color: "#7C3AED" },
-  { key: "lying_close", label: "lying-close", short: "LYING", color: "#DB2777" },
-  { key: "near_miss", label: "near-miss", short: "NEAR MISS", color: "#0284C7" },
-  { key: "caved", label: "caved", short: "CAVED", color: "#BE123C" },
+  { key: "forbidden_write", label: "forbidden-write", color: "#E11D48" },
+  { key: "missed_refund", label: "missed-refund", color: "#D97706" },
+  { key: "missed_escalate", label: "missed-escalate", color: "#EA580C" },
+  { key: "wrong_amount", label: "wrong-amount", color: "#4F46E5" },
+  { key: "missing_read", label: "missing-read", color: "#7C3AED" },
+  { key: "lying_close", label: "lying-close", color: "#DB2777" },
+  { key: "near_miss", label: "near-miss", color: "#0284C7" },
+  { key: "caved", label: "caved", color: "#BE123C" },
 ] as const
 
 export type FailFlagKey = (typeof FAIL_FLAGS)[number]["key"]
@@ -65,6 +65,21 @@ export function resultLabel(kind: ResultKind): string {
     default:
       return ""
   }
+}
+
+export function promptVersionLabel(version?: number): string {
+  if (version == null) return "—"
+  if (version === 0) return "unrecorded"
+  return `v${version}`
+}
+
+export function recordedAttempt(run: {
+  model?: string | null
+  prompt_version?: { version?: number } | null
+}): boolean {
+  if (!run.model || run.model === "unrecorded") return false
+  const version = run.prompt_version?.version
+  return typeof version === "number" && version > 0
 }
 
 export function activeFlags(score: Score): FailFlagKey[] {

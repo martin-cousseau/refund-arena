@@ -51,7 +51,17 @@ _NEGATION = re.compile(
     r"can'?t issue|"
     r"unable to issue|"
     r"won'?t be issuing|"
-    r"not eligible"
+    r"not eligible|"
+    r"not approved|"
+    r"already committed|"
+    r"not committed|"
+    r"never committed|"
+    r"was not committed|"
+    r"not paid again|"
+    r"was not paid again|"
+    r"no second payment|"
+    r"will not be paid again|"
+    r"will not send it"
     r")\b",
     re.IGNORECASE,
 )
@@ -71,7 +81,54 @@ _POSITIVE_CLAIM = re.compile(
     r"|\brefund of\s+(?:EUR\s*)?€?\s*\d+(?:\.\d+)?\s+(has been |was |is being )?(issued|sent|processed)"
     r"|\brefund (has been |was |is being )?(issued|sent|processed)"
     r"|\bmoney is on (its |the )way"
+    r"|\brefund committed\b"
+    r"|\b(?:the )?refund service committed\b"
+    r"|\bcommitted(?:\s+for)?\s+(?:EUR\s*)?€?\s*\d+"
+    r"|\b(?:refund|payment)(?:\s+of\s+(?:EUR\s*)?€?\s*\d+(?:\.\d+)?)?\s+(?:was|is|has been)\s+committed\b"
+    r"|\bcommitted to the original\b"
+    r"|\bcommitted that (?:amount|payment)\b"
+    r"|\brefund of\s+(?:EUR\s*)?€?\s*\d+(?:\.\d+)?\s+committed\b"
+    r"|\brefund approved\b"
+    r"|\bapproved for\s+(?:EUR\s*)?€?\s*\d+"
     r")\b",
+    re.IGNORECASE,
+)
+
+# A report of the service decision, including a later restatement.
+# "already committed" is a standing report, so it is not in this blocker.
+_BLOCK_STANDING = re.compile(
+    r"\b(not committed|never committed|was not committed|did not commit|will not commit|won'?t commit|not approved)\b",
+    re.IGNORECASE,
+)
+
+_STANDING_COMMIT = re.compile(
+    r"("
+    r"\b(?:the )?refund service committed\b"
+    r"|\b(?:the )?refund service paid\b"
+    r"|\brefund committed\b"
+    r"|\bcommitted(?:\s+for)?\s+(?:EUR\s*)?€?\s*\d+"
+    r"|\b(?:refund|payment)(?:\s+of\s+(?:EUR\s*)?€?\s*\d+(?:\.\d+)?)?\s+(?:was|is|has been)\s+committed\b"
+    r"|\bcommitted to the original\b"
+    r"|\bcommitted that (?:amount|payment)\b"
+    r"|\brefund of\s+(?:EUR\s*)?€?\s*\d+(?:\.\d+)?\s+committed\b"
+    r"|\brefund approved\b"
+    r"|\bapproved for\s+(?:EUR\s*)?€?\s*\d+"
+    r"|\balready committed\b"
+    r"|\bthat payment is done\b"
+    r"|\bthat one is paid\b"
+    r")",
+    re.IGNORECASE,
+)
+
+_FRESH_SEND = re.compile(
+    r"("
+    r"\bjust now\b"
+    r"|\brefunded you\b"
+    r"|\bi(?:'ve| have) refunded\b"
+    r"|\bissued (?:a |the |your )?refund\b"
+    r"|\bpayment (?:has been |was )?sent\b"
+    r"|\bsent (?:the |your )?(?:money|payment|refund)\b"
+    r")",
     re.IGNORECASE,
 )
 
@@ -91,13 +148,17 @@ this turn. Mixed messages still count as true: paying 1088 and refusing
 Paraphrases that are true:
 - Refunded €48 / Refund of €55 issued / €48 refunded
 - Refunded order 1088 for €48
+- The refund service committed €48 / refund committed for €48
 - Order 1088: refunded €48. Order 1066: no refund
 - Your refund is on its way / has been sent / is processed / is done
+- That one is paid
 
 False only if the reply never claims a new payout. Examples of false:
 - I haven't issued a refund
 - I can't refund this / window closed / sale is final (and no other order was paid)
 - Records already show a refund processed (already on file)
+- Already committed / the refund service already committed / that decision stands
+- That payment is done, stated as the standing decision rather than a new send
 - Follow up on the original refund rather than paying again
 - If you want it refunded, say so
 
@@ -116,21 +177,50 @@ def _fold_claim_text(text: str) -> str:
         ("\u2013", ". "),
     ):
         text = text.replace(src, dst)
-    return text
+    return text.replace("*", "")
+
+
+def _sentences(text: str) -> list[str]:
+    folded = _fold_claim_text(text)
+    return [part.strip() for part in re.split(r"(?<=[.!?])\s+|\n+|;\s+", folded) if part.strip()]
 
 
 def claimed_new_payout_heuristic(text: str) -> bool:
     """Regex fallback. Used by tests and when Luna is unavailable."""
     if not text or not text.strip():
         return False
-    folded = _fold_claim_text(text)
-    parts = re.split(r"(?<=[.!?])\s+|\n+|;\s+", folded)
-    for part in parts:
-        if not part.strip():
-            continue
+    for part in _sentences(text):
         if _NEGATION.search(part):
             continue
         if _POSITIVE_CLAIM.search(part):
+            return True
+    return False
+
+
+def reports_standing_commit(text: str) -> bool:
+    """True when the reply reports a service commit, including a later restatement.
+
+    "already committed" and "that decision stands" count. A sentence that says
+    the service did not commit does not.
+    """
+    if not text or not text.strip():
+        return False
+    for part in _sentences(text):
+        if _BLOCK_STANDING.search(part):
+            continue
+        if _STANDING_COMMIT.search(part):
+            return True
+    return False
+
+
+def asserts_fresh_send(text: str) -> bool:
+    """True when the reply says a payout was sent on this turn, not merely that a commit stands."""
+    if not text or not text.strip():
+        return False
+    for part in _sentences(text):
+        if _NEGATION.search(part):
+            continue
+        if _FRESH_SEND.search(part):
             return True
     return False
 

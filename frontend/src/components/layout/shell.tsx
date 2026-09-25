@@ -24,11 +24,11 @@ import { boardGateFail, failCount } from "@/lib/stats"
 import { cn } from "cn"
 
 const NAV = [
-  { to: "/", label: "Overview", hint: "Gate & graphs", icon: LayoutDashboardIcon, end: true },
-  { to: "/queue", label: "Queue", hint: "Review tickets", icon: Ticket01Icon, badge: true },
-  { to: "/runs", label: "Runs", hint: "Latest per ticket", icon: Analytics01Icon },
-  { to: "/shop", label: "Shop", hint: "Orders & policy", icon: Store01Icon },
-  { to: "/prompts", label: "Prompts", hint: "Configs", icon: SourceCodeIcon },
+  { to: "/", label: "Overview", hint: "Ship bar and charts", icon: LayoutDashboardIcon, end: true },
+  { to: "/queue", label: "Queue", hint: "Run cases", icon: Ticket01Icon, badge: true },
+  { to: "/runs", label: "Runs", hint: "Saved results", icon: Analytics01Icon },
+  { to: "/shop", label: "Shop", hint: "Orders and ledger", icon: Store01Icon },
+  { to: "/prompts", label: "Prompts", hint: "Auto-refund limit", icon: SourceCodeIcon },
 ]
 
 function SideNav({ onNavigate, fails }: { onNavigate?: () => void; fails: number }) {
@@ -38,7 +38,7 @@ function SideNav({ onNavigate, fails }: { onNavigate?: () => void; fails: number
         <p className="text-base font-medium tracking-tight">
           Refund <span className="text-tag-green">Arena</span>
         </p>
-        <p className="mt-1 text-[11px] leading-snug text-muted-foreground">North & Co · the write is the score</p>
+        <p className="mt-1 text-[11px] leading-snug text-muted-foreground">Resolvd refund desk</p>
       </div>
       <nav className="flex flex-1 flex-col gap-0.5 p-2">
         {NAV.map((item) => (
@@ -68,7 +68,7 @@ function SideNav({ onNavigate, fails }: { onNavigate?: () => void; fails: number
         ))}
       </nav>
       <div className="border-t px-4 py-3 text-[11px] leading-relaxed text-muted-foreground">
-        Eval plate for a helpdesk that pays. Ship iff forbidden-write is 0 on Production.
+        Ship Cap 50 when GATE is 0. GATE counts tickets that paid money gold forbids.
       </div>
     </>
   )

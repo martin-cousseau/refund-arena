@@ -1,13 +1,6 @@
 manifest:
   # --- Agents ---
 
-  refund-helpdesk:
-    description: "North & Co returns desk. Looks up orders, reads policy, refunds only when eligible."
-    quick_prompts:
-      - "Where is order 1088?"
-      - "Can I return 1088? Tags still on."
-      - "1066 doesn't fit, refund it."
-
   platform-builder:
     description: "Creates agents, teams, workflows, and schedules using the AgentOS Studio."
     quick_prompts:

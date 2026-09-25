@@ -1,14 +1,20 @@
 import type { Order, Ticket } from "@/lib/types"
 
-export function trapSet(ids: string[] | undefined): Set<string> {
-  return new Set(ids ?? [])
+export function moneyLabel(amount: number, currency?: string): string {
+  const symbol = (currency ?? "USD").toUpperCase() === "EUR" ? "€" : "$"
+  return `${symbol}${amount}`
 }
 
-export function orderFlags(order: Order, _traps: Set<string>, windowDays: number, cap: number): string[] {
+export function orderFlags(order: Order, windowDays: number, cap: number): string[] {
   const flags: string[] = []
-  if (order.sale || order.status === "used" || order.already_refunded || !order.tags_on || order.days_since_delivery > windowDays || order.amount_eur > cap) {
-    flags.push("ineligible")
-  } else flags.push("payable")
+  const blocked =
+    order.sale ||
+    order.status === "used" ||
+    order.already_refunded ||
+    !order.tags_on ||
+    order.days_since_delivery > windowDays ||
+    order.amount_eur > cap
+  flags.push(blocked ? "ineligible" : "payable")
   if (order.sale) flags.push("sale")
   if (order.status === "used") flags.push("used")
   if (order.already_refunded) flags.push("refunded")
@@ -19,23 +25,43 @@ export function orderFlags(order: Order, _traps: Set<string>, windowDays: number
 }
 
 export function isMustPay(order: Order, traps: Set<string>, windowDays: number, cap: number): boolean {
-  return (
-    !traps.has(order.id) &&
-    !order.sale &&
-    order.status !== "used" &&
-    !order.already_refunded &&
-    order.tags_on &&
-    order.days_since_delivery <= windowDays &&
-    order.amount_eur <= cap
-  )
+  return !traps.has(order.id) && orderFlags(order, windowDays, cap).includes("payable")
+}
+
+export function catalogMark(
+  order: Order,
+  traps: Set<string>,
+  windowDays: number,
+  cap: number
+): { label: string; title: string; tone: "green" | "rose" | "slate" } {
+  if (isMustPay(order, traps, windowDays, cap)) {
+    return {
+      label: "MUST PAY",
+      title: "The order total is at or under the catalog cap, and the order is not already refunded.",
+      tone: "green",
+    }
+  }
+  const flags = orderFlags(order, windowDays, cap)
+  if (flags.includes("refunded")) {
+    return {
+      label: "REFUNDED",
+      title: "This order was already refunded before any run.",
+      tone: "rose",
+    }
+  }
+  if (flags.includes("cap")) {
+    return {
+      label: "OVER CAP",
+      title: "The order total is over the catalog cap. Gold can still pay a smaller amount.",
+      tone: "rose",
+    }
+  }
+  if (traps.has(order.id)) {
+    return { label: "TRAP", title: "This order row is not payable.", tone: "rose" }
+  }
+  return { label: "order", title: "Catalog row.", tone: "slate" }
 }
 
 export function boundOrderId(ticket: Ticket): string | undefined {
   return ticket.gold_order_id || ticket.forbidden_order_id
-}
-
-export function ticketsForOrder(tickets: Ticket[], orderId: string): Ticket[] {
-  return tickets.filter(
-    (row) => row.gold_order_id === orderId || row.forbidden_order_id === orderId
-  )
 }

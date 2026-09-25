@@ -66,6 +66,9 @@ tmp
 shop/data/ledger.json
 shop/data/ledger.json.tmp
 shop/results/*.json
+shop/results/*.sqlite
+shop/results/*.sqlite-wal
+shop/results/*.sqlite-shm
 
 # Claude Code: ignore local/personal state. The shared dev-time skills live in
 # .agents/skills/ (committed); .claude/skills is a committed symlink into it —

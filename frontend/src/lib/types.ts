@@ -46,6 +46,9 @@ export type Order = {
   pair_role?: string
   sku_family?: string
   customer_id?: string
+  shop_status?: string
+  email?: string
+  name?: string
 }
 
 export type Payment = {
@@ -103,6 +106,7 @@ export type PromptConfig = {
   builtin: boolean
   model: string
   instructions: string
+  refund_auto_limit?: number
   created_at?: string
   updated_at?: string
 }
@@ -114,6 +118,18 @@ export type LiveSnapshot = {
   phase: string
   turns: { turn: number; content: string }[]
   tool_calls: ToolCall[]
+}
+
+export type PromptVersionStamp = {
+  id?: number
+  version?: number
+  instructions_hash?: string
+}
+
+export type DatasetStamp = {
+  dataset_id: string
+  item_id: string
+  content_hash: string
 }
 
 export type TicketRun = {
@@ -130,6 +146,12 @@ export type TicketRun = {
   escalations: Escalation[]
   orders: Order[]
   board?: LiveBoard
+  model?: string
+  prompt_version?: PromptVersionStamp
+  dataset?: DatasetStamp
+  attempt?: number
+  run_id?: string
+  created_at?: string
 }
 
 export type World = {
@@ -154,14 +176,18 @@ export type BoardRun = {
   score: Score
   content?: string | null
   tools: string[]
+  model?: string
+  prompt_version?: number
+  attempt?: number
+  created_at?: string
 }
 
 export type LiveBoard = {
   ran: number
   total: number
   closed_tickets: number
-  forbidden_write: 0 | 1
-  gate_fail?: 0 | 1
+  forbidden_write: number
+  gate_fail?: number
   missed_refund: number
   missed_escalate: number
   wrong_amount: number
